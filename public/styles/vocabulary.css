@@ -1,0 +1,87 @@
+.search-container {
+	background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+	border: 2px solid transparent;
+	transition: all 0.3s ease;
+}
+
+.search-container:focus-within {
+	border-color: #5F8396;
+	box-shadow: 0 0 0 4px rgba(95, 131, 150, 0.1);
+}
+
+.search-result {
+	background: white;
+	border-radius: 16px;
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+	transform: translateY(20px);
+	opacity: 0;
+	animation: slideUp 0.4s ease forwards;
+}
+
+@keyframes slideUp {
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+.dictionary-card {
+	background: white;
+	border-radius: 12px;
+	border: 1px solid #f3f4f6;
+	transition: all 0.3s ease;
+}
+
+.dictionary-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 8px 25px rgba(95, 131, 150, 0.1);
+}
+
+.btn-secondary {
+	background: linear-gradient(135deg, #BCB9AC 0%, #6F6558 100%);
+	transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 6px 15px rgba(188, 185, 172, 0.3);
+}
+
+.korean-text { font-weight: 600; font-size: 1.25rem; color: #2F4A61; }
+.pronunciation-text { color: #5F8396; font-style: italic; }
+.meaning-text { color: #6F6558; line-height: 1.6; }
+
+.example-text {
+	background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+	border-left: 4px solid #5F8396;
+}
+
+.floating-btn {
+	position: fixed;
+	bottom: 2rem;
+	right: 2rem;
+	z-index: 50;
+	background: linear-gradient(135deg, #5F8396 0%, #2F4A61 100%);
+	transition: all 0.3s ease;
+}
+
+.floating-btn:hover {
+	transform: translateY(-4px) scale(1.05);
+	box-shadow: 0 20px 40px rgba(95, 131, 150, 0.4);
+}
+
+.dictionary-preview {
+	background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+	border: 1px solid #e2e8f0;
+}
+
+.remove-btn { opacity: 0; transition: all 0.3s ease; }
+.dictionary-card:hover .remove-btn { opacity: 1; }
+
+.loading-spinner { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
+
+.empty-state { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); }
+
+.modal .modal-content { background: #fff; border-radius: 16px; }
+

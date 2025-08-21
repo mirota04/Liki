@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/images/Picture2.png">
+    <title>Liki - Login</title>
+    
+    <!-- External CSS -->
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5F8396',
+                        secondary: '#2F4A61',
+                        neutral: '#BCB9AC',
+                        warm: '#6F6558',
+                        dark: '#242527',
+                        'neutral-light': '#BCB9AC20'
+                    },
+                    borderRadius: {
+                        'none': '0px',
+                        'sm': '4px',
+                        DEFAULT: '8px',
+                        'md': '12px',
+                        'lg': '16px',
+                        'xl': '20px',
+                        '2xl': '24px',
+                        '3xl': '32px',
+                        'full': '9999px',
+                        'button': '8px'
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/styles/main.css">
+    <style>
+        .login-bg {
+            background: linear-gradient(135deg, #5F8396 0%, #2F4A61 100%);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(188, 185, 172, 0.2);
+        }
+        .input-focus:focus {
+            border-color: #5F8396;
+            box-shadow: 0 0 0 3px rgba(95, 131, 150, 0.1);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #5F8396 0%, #2F4A61 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(95, 131, 150, 0.3);
+        }
+        
+        /* Error message animations */
+        .error-slide-in {
+            animation: slideInDown 0.3s ease-out;
+        }
+        
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .error-bounce {
+            animation: bounce 0.6s ease-out;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 53%, 80%, 100% {
+                transform: translate3d(0, 0, 0);
+            }
+            40%, 43% {
+                transform: translate3d(0, -8px, 0);
+            }
+            70% {
+                transform: translate3d(0, -4px, 0);
+            }
+            90% {
+                transform: translate3d(0, -2px, 0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-inter min-h-screen">
+    <!-- Background Pattern -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-secondary/5 rounded-full blur-3xl"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="min-h-screen flex items-center justify-center px-6 py-12">
+        <div class="w-full max-w-md">
+            <!-- Logo Section -->
+            <div class="text-center mb-8">
+                <div class="flex justify-center mb-4">
+                    <img src="/images/Picture2.png" alt="Liki Logo" class="h-16">
+                </div>
+                <h1 class="text-3xl font-bold text-dark mb-2">Welcome Back</h1>
+                <p class="text-warm">Sign in to continue your Korean learning journey</p>
+            </div>
+
+            <!-- Login Form -->
+            <div class="glass-card rounded-2xl p-8 shadow-xl">
+                <!-- Error Message Display -->
+                <div id="loginError" class="hidden mb-6 p-4 bg-red-50 border border-red-200 rounded-xl shadow-sm">
+                    <div class="flex items-center space-x-3">
+                        <div class="flex-shrink-0">
+                            <i class="ri-error-warning-line text-red-500 text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-medium text-red-800">Login Failed</h3>
+                            <p id="errorMessage" class="text-sm text-red-700 mt-1"></p>
+                        </div>
+                        <button onclick="hideLoginError()" class="flex-shrink-0 text-red-400 hover:text-red-600 transition-colors">
+                            <i class="ri-close-line text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <form action="/login" method="POST" class="space-y-6">
+                    <!-- Email/Username Field -->
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-dark mb-2">
+                            Email or Username
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="ri-mail-line text-gray-400"></i>
+                            </div>
+                            <input 
+                                type="text" 
+                                id="email" 
+                                name="email" 
+                                required
+                                class="input-focus w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none text-sm transition-all duration-200"
+                                placeholder="Enter your email or username"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-dark mb-2">
+                            Password
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="ri-lock-line text-gray-400"></i>
+                            </div>
+                            <input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                required
+                                class="input-focus w-full pl-10 pr-10 py-3 border border-gray-200 rounded-lg focus:outline-none text-sm transition-all duration-200"
+                                placeholder="Enter your password"
+                                autocomplete="off"
+                            >
+                            <button 
+                                type="button" 
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-warm transition-colors"
+                                onclick="togglePassword()"
+                            >
+                                <i class="ri-eye-line" id="eye-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Remember Me & Forgot Password -->
+                    <div class="flex items-center justify-between">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary focus:ring-2">
+                            <span class="ml-2 text-sm text-dark">Remember me</span>
+                        </label>
+                        <a href="#" class="text-sm text-primary hover:text-secondary transition-colors font-medium">
+                            Forgot password?
+                        </a>
+                    </div>
+
+                    <!-- Login Button -->
+                    <button 
+                        type="submit" 
+                        class="btn-primary w-full py-3 px-6 text-white font-semibold rounded-lg !rounded-button transition-all duration-300"
+                    >
+                        Sign In
+                    </button>
+
+                    <!-- Divider -->
+                    <div class="relative my-6">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-gray-200"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-2 bg-white text-gray-500">Or continue with</span>
+                        </div>
+                    </div>
+
+                    <!-- Social Login Buttons -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <button 
+                            type="button" 
+                            class="flex items-center justify-center px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                            <i class="ri-google-fill text-red-500 mr-2"></i>
+                            <span class="text-sm text-dark">Google</span>
+                        </button>
+                        <button 
+                            type="button" 
+                            class="flex items-center justify-center px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                            <i class="ri-apple-fill text-gray-800 mr-2"></i>
+                            <span class="text-sm text-dark">Apple</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Sign Up Link -->
+                <div class="text-center mt-6">
+                    <p class="text-sm text-warm">
+                        Don't have an account? 
+                        <a href="#" onclick="navigateToPage('register')" class="text-primary hover:text-secondary transition-colors font-medium">
+                            Sign up here
+                        </a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center mt-8">
+                <p class="text-xs text-gray-400">
+                    By signing in, you agree to our 
+                    <a href="#" class="text-primary hover:text-secondary transition-colors">Terms of Service</a> 
+                    and 
+                    <a href="#" class="text-primary hover:text-secondary transition-colors">Privacy Policy</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom JavaScript -->
+    <script src="/scripts/main.js"></script>
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eye-icon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.className = 'ri-eye-off-line';
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.className = 'ri-eye-line';
+            }
+        }
+
+        // Error handling functions
+        function showLoginError(message) {
+            const errorDiv = document.getElementById('loginError');
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = message;
+            errorDiv.classList.remove('hidden');
+            errorDiv.classList.add('error-slide-in', 'error-bounce');
+            
+            // Auto-hide after 8 seconds
+            setTimeout(() => {
+                hideLoginError();
+            }, 8000);
+        }
+        
+        function hideLoginError() {
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.classList.add('hidden');
+        }
+        
+        // Check for error parameters in URL and display error messages
+        function checkForErrors() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const error = urlParams.get('error');
+            
+            if (error) {
+                let message = 'An error occurred during login. Please try again.';
+                
+                switch(error) {
+                    case 'invalid_credentials':
+                        message = 'Invalid email/username or password. Please check your credentials and try again.';
+                        break;
+                    case 'user_not_found':
+                        message = 'User not found. Please check your email/username or create a new account.';
+                        break;
+                    case 'incorrect_password':
+                        message = 'Incorrect password. Please check your password and try again.';
+                        break;
+                    case 'server_error':
+                        message = 'A server error occurred. Please try again later.';
+                        break;
+                    default:
+                        message = 'Login failed. Please try again.';
+                }
+                
+                showLoginError(message);
+                
+                // Clean up the URL
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+            }
+        }
+        
+        // Check for errors when page loads
+        checkForErrors();
+    </script>
+</body>
+</html>

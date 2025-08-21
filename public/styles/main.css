@@ -1,0 +1,167 @@
+:where([class^="ri-"])::before {
+    content: "\f3c2";
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+.progress-ring {
+    transform: rotate(-90deg);
+}
+
+.progress-ring-circle {
+    stroke-dasharray: 251.2;
+    stroke-dashoffset: 251.2;
+    transition: stroke-dashoffset 0.5s ease-in-out;
+}
+
+.card-hover {
+    transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #5F8396 0%, #2F4A61 100%);
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(95, 131, 150, 0.3);
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, #5F8396 0%, #2F4A61 100%);
+}
+
+.hero-bg {
+    background: linear-gradient(135deg, #BCB9AC15 0%, #5F839610 100%);
+    border-bottom: 1px solid #BCB9AC30;
+}
+
+.achievement-card {
+    background: linear-gradient(135deg, #BCB9AC10 0%, #6F655810 100%);
+    border: 1px solid #BCB9AC20;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #5F839605 0%, #2F4A6105 100%);
+    border: 1px solid #5F839620;
+}
+
+.custom-text-white {
+    color: #ffffff !important;
+}
+
+.custom-text-primary {
+    color: #5F8396 !important;
+}
+
+.hover\:custom-text-primary:hover {
+    color: #5F8396 !important;
+}
+
+/* Mirage loader (CSS-only with SVG filter) */
+.loader-container {
+    --uib-size: 60px;
+    --uib-color: #000000;
+    --uib-speed: 2.6s;
+    --uib-dot-size: calc(var(--uib-size) * 0.23);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: var(--uib-size);
+    height: var(--uib-dot-size);
+    filter: url('#uib-jelly-ooze');
+}
+
+.loader-dot {
+    position: absolute;
+    top: calc(50% - var(--uib-dot-size) / 2);
+    left: calc(0px - var(--uib-dot-size) / 2);
+    display: block;
+    height: var(--uib-dot-size);
+    width: var(--uib-dot-size);
+    border-radius: 50%;
+    background-color: var(--uib-color);
+    animation: loader-stream var(--uib-speed) linear infinite both;
+    transition: background-color 0.3s ease;
+}
+
+.loader-dot:nth-child(2) { animation-delay: calc(var(--uib-speed) * -0.2); }
+.loader-dot:nth-child(3) { animation-delay: calc(var(--uib-speed) * -0.4); }
+.loader-dot:nth-child(4) { animation-delay: calc(var(--uib-speed) * -0.6); }
+.loader-dot:nth-child(5) { animation-delay: calc(var(--uib-speed) * -0.8); }
+
+@keyframes loader-stream {
+    0%, 100% { transform: translateX(0) scale(0); }
+    50% { transform: translateX(calc(var(--uib-size) * 0.5)) scale(1); }
+    99.999% { transform: translateX(calc(var(--uib-size))) scale(0); }
+}
+
+/* Form validation styles */
+.input-error {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.input-success {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+}
+
+.password-strength {
+    height: 4px;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.strength-weak { 
+    background: #ef4444; 
+}
+
+.strength-medium { 
+    background: #f59e0b; 
+}
+
+.strength-strong { 
+    background: #10b981; 
+}
+
+.custom-bg-primary {
+    background-color: #5F8396 !important;
+}
+
+/* Floating action button elevation on mobile (to clear bottom nav) */
+@media (max-width: 768px) {
+    .floating-btn--above-nav {
+        bottom: 5rem !important;
+        right: 1.25rem !important;
+    }
+}
+
+/* Custom scrollbar styles */
+/* WebKit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+    width: 0; /* Scrollbar width */
+    height: 0; /* Horizontal scrollbar height */
+}
+
+::-webkit-scrollbar-track {
+    background: transparent; /* Track transparent, make content visible */
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.5); /* Scrollbar thumb color */
+    border-radius: 4px; /* Thumb rounded corners */
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.7); /* Hover color */
+}

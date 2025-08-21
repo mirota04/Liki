@@ -1,0 +1,140 @@
+/* Grammar page specific styles */
+.grammar-row {
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.grammar-row:hover {
+    background: linear-gradient(135deg, #5F839605 0%, #2F4A6105 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(95, 131, 150, 0.1);
+}
+
+.grammar-row:last-child {
+    border-bottom: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #5F8396 0%, #2F4A61 100%);
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(95, 131, 150, 0.3);
+}
+
+.floating-btn {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 50;
+    background: linear-gradient(135deg, #5F8396 0%, #2F4A61 100%);
+    transition: all 0.3s ease;
+}
+
+.floating-btn:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 20px 40px rgba(95, 131, 150, 0.4);
+}
+
+.search-input {
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    box-shadow: 0 0 0 3px rgba(95, 131, 150, 0.1);
+    border-color: #5F8396;
+}
+
+.filter-btn {
+    transition: all 0.3s ease;
+}
+
+.filter-btn.active {
+    background: linear-gradient(135deg, #5F8396 0%, #2F4A61 100%);
+    color: white;
+}
+
+.grammar-table {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.korean-text {
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: #2F4A61;
+}
+
+.english-text {
+    color: #6F6558;
+    line-height: 1.6;
+}
+
+.grammar-number {
+    background: linear-gradient(135deg, #BCB9AC20 0%, #5F839610 100%);
+    color: #2F4A61;
+    font-weight: 600;
+}
+
+.copy-btn {
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.grammar-row:hover .copy-btn {
+    opacity: 1;
+}
+
+.modal {
+    backdrop-filter: blur(8px);
+}
+
+.modal-content {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .grammar-table {
+        display: none;
+    }
+    .grammar-cards {
+        display: block;
+    }
+    /* Hide mobile cards beyond top 3 by default; JS will toggle for load more */
+    .grammar-card { display: none; cursor: pointer; }
+    .grammar-card:nth-child(n+1):nth-child(-n+3) { display: block; }
+    .grammar-card .card-details { display: none; }
+    .grammar-card.is-open .card-details { display: block; }
+    /* Lift load-more button above bottom nav */
+    .load-more-wrap { padding-bottom: 5rem; }
+}
+
+@media (min-width: 769px) {
+    .grammar-cards {
+        display: none;
+    }
+}
+
+/* Custom classes for grammar page */
+.custom-text-white {
+    color: #ffffff !important;
+}
+
+.custom-text-primary {
+    color: #5F8396 !important;
+}
+
+.custom-bg-primary {
+    background-color: #5F8396 !important;
+}
+
+.hover\:custom-text-primary:hover {
+    color: #5F8396 !important;
+}

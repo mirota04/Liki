@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../public/images/Picture2.png">
+    <title>Liki</title>
+    
+    <!-- External CSS -->
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet">
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5F8396',
+                        secondary: '#2F4A61',
+                        neutral: '#BCB9AC',
+                        warm: '#6F6558',
+                        dark: '#242527',
+                        'neutral-light': '#BCB9AC20'
+                    },
+                    borderRadius: {
+                        'none': '0px',
+                        'sm': '4px',
+                        DEFAULT: '8px',
+                        'md': '12px',
+                        'lg': '16px',
+                        'xl': '20px',
+                        '2xl': '24px',
+                        '3xl': '32px',
+                        'full': '9999px',
+                        'button': '8px'
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="stylesheet" href="/styles/grammar.css">
+</head>
+<body class="bg-gray-50 font-inter">
+    <!-- Header -->
+    <header class="bg-white/95 backdrop-blur-sm border-b border-neutral/20 sticky top-0 z-50">
+        <div class="w-full px-4 sm:px-6 py-3 sm:py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-12">
+                    <img onclick="navigateToPage('home')" src="/images/Picture2.png" alt="logo" style="height: 35px;">
+                    <nav class="hidden md:flex items-center space-x-8">
+                        <a href="#" onclick="navigateToPage('home')" class="text-dark hover:custom-text-primary transition-colors font-medium">Home</a>
+                        <a href="#" onclick="navigateToPage('grammar')" class="custom-text-primary font-semibold transition-colors font-medium">Grammar</a>
+                        <a href="#" onclick="navigateToPage('vocabulary')" class="text-dark hover:custom-text-primary transition-colors font-medium">Vocabulary</a>
+                        <a href="#" class="text-dark hover:custom-text-primary transition-colors font-medium">Practice</a>
+                        <a href="#" class="text-dark hover:custom-text-primary transition-colors font-medium">Profile</a>
+                    </nav>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="w-10 h-10 flex items-center justify-center text-warm hover:custom-text-primary transition-colors">
+                        <i class="ri-notification-3-line ri-lg"></i>
+                    </button>
+                    <button class="w-10 h-10 flex items-center justify-center custom-bg-primary custom-text-white rounded-full hover:bg-secondary transition-colors">
+                        <i class="ri-user-3-line"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="min-h-screen py-6 sm:py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6">
+            <!-- Page Header -->
+            <div class="flex items-center justify-between mb-8">
+                <div class="flex items-center space-x-4">
+                    <a href="#" onclick="navigateToPage('home')" class="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">
+                        <i class="ri-arrow-left-line text-dark"></i>
+                    </a>
+                    <h1 class="text-3xl font-bold text-dark">Grammar</h1>
+                </div>
+                <div class="text-sm text-warm text-right w-full md:w-auto md:text-left">
+                    <span class="font-medium text-dark"><%= typeof total !== 'undefined' ? total : 0 %></span> grammar rules available
+                </div>
+            </div>
+            
+            <!-- Search and Filters -->
+            <div class="bg-white rounded-xl p-4 sm:p-6 mb-6 sm:mb-8 shadow-sm border border-gray-100">
+                <div class="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                    <div class="flex-1 max-w-md">
+                        <div class="relative">
+                            <input type="text" placeholder="Search grammar rules..." class="search-input w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-0 text-sm">
+                            <div class="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 flex items-center justify-center">
+                                <i class="ri-search-line text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Grammar Table -->
+            <div class="grammar-table">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">#</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider md:w-1/4">Korean Grammar</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">English Explanation</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider md:w-1/5">Korean Example</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider md:w-1/5">English Translation</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <% (grammars || []).forEach(function(g){ %>
+                            <tr class="grammar-row">
+                                <td class="px-6 py-6">
+                                    <div class="w-8 h-8 flex items-center justify-center grammar-number rounded-full text-sm"><%= g.id %></div>
+                                </td>
+                                <td class="px-6 py-6">
+                                    <div class="korean-text"><%= g.title %></div>
+                                </td>
+                                <td class="px-6 py-6">
+                                    <div class="english-text"><%= g.explanation %></div>
+                                </td>
+                                <td class="px-6 py-6">
+                                    <div class="korean-text text-base"><%= g.kexample %></div>
+                                </td>
+                                <td class="px-6 py-6">
+                                    <div class="english-text"><%= g.eexample %></div>
+                                </td>
+                            </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Mobile Grammar Cards -->
+            <div class="grammar-cards space-y-3 sm:space-y-4">
+                <% (grammars || []).forEach(function(g){ %>
+                <div class="grammar-card bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-8 h-8 flex items-center justify-center grammar-number rounded-full text-sm"><%= g.id %></div>
+                    </div>
+                    <div class="space-y-2 sm:space-y-3">
+                        <div>
+                            <div class="korean-text text-base sm:text-lg"><%= g.title %></div>
+                        </div>
+                        <div class="english-text text-xs sm:text-sm"><%= g.explanation %></div>
+                        <!-- Details (examples) shown only when expanded on mobile -->
+                        <div class="card-details border-t pt-3">
+                            <div class="korean-text text-sm sm:text-base mb-2"><%= g.kexample %></div>
+                            <div class="english-text text-xs sm:text-sm"><%= g.eexample %></div>
+                        </div>
+                    </div>
+                </div>
+                <% }) %>
+            </div>
+            
+            <!-- Load More Button -->
+            <div class="flex justify-center mt-12 load-more-wrap">
+                <button id="toggleLoadBtn" class="btn-primary custom-text-white px-8 py-3 !rounded-button font-medium whitespace-nowrap">
+                    Load More Grammar Rules
+                </button>
+            </div>
+        </div>
+        
+        <!-- Floating Add Button -->
+        <button class="floating-btn floating-btn--above-nav w-14 h-14 rounded-full custom-text-white shadow-lg">
+            <i class="ri-add-line ri-xl"></i>
+        </button>
+        
+        <!-- Add Grammar Modal -->
+        <div id="addGrammarModal" class="modal fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+            <div class="modal-content w-full max-w-2xl mx-4 p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-dark">Add New Grammar Rule</h2>
+                    <button id="closeModal" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors">
+                        <i class="ri-close-line text-gray-500"></i>
+                    </button>
+                </div>
+                <form action="/grammar" method="POST" class="space-y-6" id="addGrammarForm" autocomplete="off">
+                    <div>
+                        <label class="block text-sm font-medium text-dark mb-2">Korean Grammar Pattern</label>
+                        <input type="text" name="title" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="e.g., -이/가" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-dark mb-2">English Explanation</label>
+                        <textarea name="explanation" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary h-24 resize-none" placeholder="Explain the grammar rule in English..." required></textarea>
+                    </div>
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium text-dark mb-2">Korean Example</label>
+                            <input type="text" name="Kexample" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="Korean sentence example" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-dark mb-2">English Example</label>
+                            <input type="text" name="Eexample" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="English example" required>
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-4 pt-6">
+                        <button type="button" id="cancelBtn" class="px-6 py-3 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors !rounded-button whitespace-nowrap">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn-primary custom-text-white px-6 py-3 !rounded-button font-medium whitespace-nowrap">
+                            Add Grammar Rule
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+
+
+    <!-- Custom JavaScript -->
+    <script src="/scripts/main.js"></script>
+    <script src="/scripts/grammar.js"></script>
+
+    <!-- Mobile bottom nav -->
+    <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-neutral/20 md:hidden z-50">
+        <div class="flex justify-around py-2">
+            <button onclick="navigateToPage('home')" class="flex flex-col items-center text-dark">
+                <i class="ri-home-4-line"></i>
+                <span class="text-xs">Home</span>
+            </button>
+            <button onclick="navigateToPage('grammar')" class="flex flex-col items-center text-primary">
+                <i class="ri-chat-3-line"></i>
+                <span class="text-xs">Grammar</span>
+            </button>
+            <button onclick="navigateToPage('vocabulary')" class="flex flex-col items-center text-dark">
+                <i class="ri-book-2-line"></i>
+                <span class="text-xs">Vocab</span>
+            </button>
+            <button class="flex flex-col items-center text-dark">
+                <i class="ri-user-3-line"></i>
+                <span class="text-xs">Profile</span>
+            </button>
+        </div>
+    </nav>
+</body>
+</html>
