@@ -35,9 +35,45 @@
 	background: linear-gradient(90deg, transparent, #D7E3EB, transparent);
 }
 
+/* Floating button styles */
+.floating-btn {
+	position: fixed;
+	bottom: 2rem;
+	right: 2rem;
+	z-index: 50;
+	background: linear-gradient(135deg, #5F8396 0%, #2F4A61 100%);
+	transition: all 0.3s ease;
+}
+
+.floating-btn:hover {
+	transform: translateY(-4px) scale(1.05);
+	box-shadow: 0 20px 40px rgba(95, 131, 150, 0.4);
+}
+
+/* Responsive design */
 @media (max-width: 768px) {
 	/* Add spacing above bottom nav */
 	main { padding-bottom: 5rem; }
+	
+	/* Adjust floating button position for mobile */
+	.floating-btn--above-nav {
+		bottom: 5rem !important;
+		right: 1.25rem !important;
+	}
+	
+	/* Improve mobile grid layouts */
+	.achievement-card {
+		padding: 1rem;
+	}
+	
+	.stat-card {
+		padding: 1rem;
+	}
+	
+	/* Mobile chart adjustments */
+	.h-40 {
+		height: 8rem;
+	}
 }
 
 
