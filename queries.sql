@@ -30,3 +30,11 @@ CREATE TABLE Dictionary (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     user_id INT, FOREIGN KEY (user_id) REFERENCES Users(id)
 );
+
+DROP TABLE IF EXISTS Achievements;
+CREATE TABLE Achievements (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    icon TEXT NOT NULL
+);

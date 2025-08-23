@@ -19,6 +19,7 @@ app.set('view engine', 'ejs');
 app.set('views', './views');
 
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(express.static("public"));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'dev-secret',
@@ -106,25 +107,23 @@ app.get("/vocabulary", requireAuth, (req, res) => {
 
 app.post("/vocabulary", requireAuth, async (req, res) => {
   try {
-    const { word, meaning, meaning_geo } = req.body;
-    if (!word || !meaning) {
-      return res.status(400).json({ error: 'Word and meaning are required' });
-    }
-
-    const insertQuery = `
-      INSERT INTO Dictionary (word, meaning, meaning_geo, user_id)
-      VALUES ($1, $2, $3, $4)
-      RETURNING id
-    `;
-    const result = await db.query(insertQuery, [word, meaning, meaning_geo || null, req.session.user.id]);
+    console.log('Raw request body:', req.body);
+    console.log('Request headers:', req.headers);
     
-    res.json({ 
-      success: true, 
-      id: result.rows[0].id,
-      message: 'Word added to dictionary successfully' 
-    });
+    const { word, meaning, meaning_geo } = req.body;
+    const userId = req.session.user.id;
+
+    console.log('Adding word to dictionary:', { word, meaning, meaning_geo, userId });
+
+    // Just try to insert directly - no checks for now
+    const insertQuery = "INSERT INTO Dictionary (word, meaning, meaning_geo, user_id) VALUES ($1, $2, $3, $4) RETURNING id";
+    const result = await db.query(insertQuery, [word, meaning, meaning_geo || null, userId]);
+    
+    console.log('Word added successfully:', result.rows[0]);
+    res.json({ success: true, id: result.rows[0].id });
   } catch (err) {
     console.error('Error inserting vocabulary:', err);
+    console.error('Error details:', err.message, err.code, err.detail);
     res.status(500).json({ error: 'Failed to add word to dictionary' });
   }
 });

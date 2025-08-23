@@ -26,6 +26,45 @@ function initProfileDropdown() {
 	}
 }
 
+// Dark mode functionality
+function initDarkMode() {
+	const darkModeToggle = document.getElementById('darkModeToggle');
+	const darkModeThumb = document.getElementById('darkModeThumb');
+	
+	if (darkModeToggle && darkModeThumb) {
+		// Check localStorage for saved preference
+		const currentTheme = localStorage.getItem('theme') || 'light';
+		document.documentElement.setAttribute('data-theme', currentTheme);
+		
+		// Update toggle state
+		if (currentTheme === 'dark') {
+			darkModeToggle.classList.add('active');
+			darkModeThumb.style.transform = 'translateX(1.25rem)';
+		}
+		
+		// Toggle dark mode
+		darkModeToggle.addEventListener('click', function() {
+			const currentTheme = document.documentElement.getAttribute('data-theme');
+			const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+			
+			// Update DOM
+			document.documentElement.setAttribute('data-theme', newTheme);
+			
+			// Update toggle state
+			if (newTheme === 'dark') {
+				darkModeToggle.classList.add('active');
+				darkModeThumb.style.transform = 'translateX(1.25rem)';
+			} else {
+				darkModeToggle.classList.remove('active');
+				darkModeThumb.style.transform = 'translateX(0.125rem)';
+			}
+			
+			// Save to localStorage
+			localStorage.setItem('theme', newTheme);
+		});
+	}
+}
+
 // Logout function
 function logout() {
 	if (confirm('Are you sure you want to logout?')) {
@@ -81,39 +120,48 @@ document.addEventListener('DOMContentLoaded', function() {
 	// Initialize profile dropdown
 	initProfileDropdown();
 	
+	// Initialize dark mode
+	initDarkMode();
+	
 	const progressCircle = document.querySelector('.progress-ring-circle');
-    const progressValue = 70;
-    const circumference = 2 * Math.PI * 40;
-    const offset = circumference - (progressValue / 100) * circumference;
-    setTimeout(() => {
-        progressCircle.style.strokeDashoffset = offset;
-    }, 500);
+    if (progressCircle) {
+        const progressValue = 70;
+        const circumference = 2 * Math.PI * 40;
+        const offset = circumference - (progressValue / 100) * circumference;
+        setTimeout(() => {
+            progressCircle.style.strokeDashoffset = offset;
+        }, 500);
+    }
 });
 
 // Card interactions
 document.addEventListener('DOMContentLoaded', function() {
     const cards = document.querySelectorAll('.card-hover');
-    cards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-4px)';
+    if (cards.length > 0) {
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-4px)';
+            });
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
         });
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-        });
-    });
+    }
 });
 
 // Button interactions
 document.addEventListener('DOMContentLoaded', function() {
     const buttons = document.querySelectorAll('.btn-primary');
-    buttons.forEach(button => {
-        button.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-2px)';
+    if (buttons.length > 0) {
+        buttons.forEach(button => {
+            button.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px)';
+            });
+            button.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
         });
-        button.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-        });
-    });
+    }
 });
 
 // Echarts proxy setup

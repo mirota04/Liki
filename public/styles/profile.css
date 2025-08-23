@@ -76,4 +76,47 @@
 	}
 }
 
+/* Dark mode styles for profile page */
+[data-theme="dark"] .achievement-card {
+	background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%) !important;
+	border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .achievement-card.unlocked {
+	border-color: rgba(230, 223, 201, 0.4) !important;
+}
+
+[data-theme="dark"] .stat-card {
+	background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%) !important;
+	border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .korean-text {
+	color: var(--primary-text) !important;
+}
+
+[data-theme="dark"] .english-text {
+	color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .meaning-text {
+	color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .dictionary-card {
+	background-color: var(--bg-tertiary) !important;
+	border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .floating-btn {
+	background: linear-gradient(135deg, var(--primary-gradient-from) 0%, var(--primary-gradient-to) 100%) !important;
+	color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .floating-btn:hover {
+	background: linear-gradient(135deg, var(--primary-gradient-to) 0%, var(--primary-gradient-from) 100%) !important;
+	transform: translateY(-4px) scale(1.05);
+	box-shadow: 0 20px 40px rgba(230, 223, 201, 0.4);
+}
+
 

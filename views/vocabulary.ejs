@@ -78,10 +78,20 @@
 								<i class="ri-user-3-line mr-3 text-primary"></i>
 								Profile
 							</a>
-							<a href="#" onclick="navigateToPage('settings')" class="flex items-center px-4 py-2 text-sm text-dark hover:bg-gray-50 transition-colors">
+							<a href="#" class="flex items-center px-4 py-2 text-sm text-dark hover:bg-gray-50 transition-colors">
 								<i class="ri-settings-3-line mr-3 text-warm"></i>
 								Settings
 							</a>
+							<div class="border-t border-gray-100 my-1"></div>
+							<div class="flex items-center justify-between px-4 py-2">
+								<div class="flex items-center">
+									<i class="ri-moon-line mr-3 text-warm"></i>
+									<span class="text-sm text-dark">Dark Mode</span>
+								</div>
+								<button id="darkModeToggle" class="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2">
+									<span id="darkModeThumb" class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1"></span>
+								</button>
+							</div>
 							<div class="border-t border-gray-100 my-1"></div>
 							<a href="#" onclick="logout()" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
 								<i class="ri-logout-box-r-line mr-3"></i>
@@ -218,12 +228,12 @@
 			<form id="addWordForm" class="space-y-6">
 				<div>
 					<label class="block text-sm font-medium text-dark mb-2">Korean Word</label>
-					<input type="text" id="koreanWord" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="한국어" required>
+					<input type="text" id="koreanWord" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="한국어">
 				</div>
 				
 				<div>
 					<label class="block text-sm font-medium text-dark mb-2">English Meaning</label>
-					<input type="text" id="meaning" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="Korean language" required>
+					<input type="text" id="meaning" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="Korean language">
 				</div>
 				
 				<div>

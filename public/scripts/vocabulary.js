@@ -16,6 +16,14 @@ document.addEventListener('DOMContentLoaded', function() {
 	const englishMeaningInput = document.getElementById('meaning');
 	const georgianInput = document.getElementById('georgianTranslation');
 
+	// Debug: Check if all elements are found
+	console.log('Elements found:', {
+		addWordForm: !!addWordForm,
+		koreanWordInput: !!koreanWordInput,
+		englishMeaningInput: !!englishMeaningInput,
+		georgianInput: !!georgianInput
+	});
+
 	const sampleWords = {
 		'안녕하세요': { korean: '안녕하세요', meaning: 'Hello, good day (formal greeting)', example: '안녕하세요, 만나서 반갑습니다.', exampleTranslation: 'Hello, nice to meet you.' },
 		'감사합니다': { korean: '감사합니다', meaning: 'Thank you (formal)', example: '도움을 주셔서 감사합니다.', exampleTranslation: 'Thank you for your help.' },
@@ -159,15 +167,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	function handleFormSubmit(e) {
 		e.preventDefault();
-		const korean = koreanWordInput ? koreanWordInput.value.trim() : '';
-		const meaning = englishMeaningInput ? englishMeaningInput.value.trim() : '';
-		// Georgian is optional; capture if present for future use
-		const georgian = georgianInput ? georgianInput.value.trim() : '';
+		const korean = koreanWordInput.value.trim();
+		const meaning = englishMeaningInput.value.trim();
+		const georgian = georgianInput.value.trim();
 
-		if (!korean || !meaning) {
-			showNotification('Please fill in Korean and English fields', 'error');
-			return;
-		}
+		console.log('Form data to send:', { korean, meaning, georgian });
 
 		// Send to backend
 		fetch('/vocabulary', {
@@ -186,11 +190,10 @@ document.addEventListener('DOMContentLoaded', function() {
 			if (data.success) {
 				addWordToDictionary(korean, meaning);
 				// Clear inputs and close modal
-				if (koreanWordInput) koreanWordInput.value = '';
-				if (englishMeaningInput) englishMeaningInput.value = '';
-				if (georgianInput) georgianInput.value = '';
+				koreanWordInput.value = '';
+				englishMeaningInput.value = '';
+				georgianInput.value = '';
 				closeModal();
-				showNotification('Word added to dictionary!', 'success');
 			} else {
 				showNotification(data.error || 'Failed to add word', 'error');
 			}
@@ -216,7 +219,12 @@ document.addEventListener('DOMContentLoaded', function() {
 	if (floatingAddBtn) floatingAddBtn.addEventListener('click', openModal);
 	if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
 	if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
-	if (addWordForm) addWordForm.addEventListener('submit', handleFormSubmit);
+	if (addWordForm) {
+		console.log('Adding form submit listener');
+		addWordForm.addEventListener('submit', handleFormSubmit);
+	} else {
+		console.log('Form not found!');
+	}
 	// Close on backdrop click
 	if (addWordModal) {
 		addWordModal.addEventListener('click', function(e) {

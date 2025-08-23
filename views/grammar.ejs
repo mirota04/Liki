@@ -83,6 +83,16 @@
 								Settings
 							</a>
 							<div class="border-t border-gray-100 my-1"></div>
+							<div class="flex items-center justify-between px-4 py-2">
+								<div class="flex items-center">
+									<i class="ri-moon-line mr-3 text-warm"></i>
+									<span class="text-sm text-dark">Dark Mode</span>
+								</div>
+								<button id="darkModeToggle" class="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2">
+									<span id="darkModeThumb" class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1"></span>
+								</button>
+							</div>
+							<div class="border-t border-gray-100 my-1"></div>
 							<a href="#" onclick="logout()" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
 								<i class="ri-logout-box-r-line mr-3"></i>
 								Logout
@@ -199,37 +209,37 @@
         
         <!-- Add Grammar Modal -->
         <div id="addGrammarModal" class="modal fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
-            <div class="modal-content w-full max-w-2xl mx-4 p-8">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-bold text-dark">Add New Grammar Rule</h2>
+            <div class="modal-content w-full max-w-lg mx-4 p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between mb-4 sm:mb-6">
+                    <h2 class="text-xl sm:text-2xl font-bold text-dark">Add New Grammar Rule</h2>
                     <button id="closeModal" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors">
                         <i class="ri-close-line text-gray-500"></i>
                     </button>
                 </div>
-                <form action="/grammar" method="POST" class="space-y-6" id="addGrammarForm" autocomplete="off">
+                <form action="/grammar" method="POST" class="space-y-4 sm:space-y-6" id="addGrammarForm" autocomplete="off">
                     <div>
                         <label class="block text-sm font-medium text-dark mb-2">Korean Grammar Pattern</label>
-                        <input type="text" name="title" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="e.g., -이/가" required>
+                        <input type="text" name="title" class="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="e.g., -이/가" required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-dark mb-2">English Explanation</label>
-                        <textarea name="explanation" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary h-24 resize-none" placeholder="Explain the grammar rule in English..." required></textarea>
+                        <textarea name="explanation" class="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary h-20 sm:h-24 resize-none" placeholder="Explain the grammar rule in English..." required></textarea>
                     </div>
-                    <div class="space-y-6">
+                    <div class="space-y-4 sm:space-y-6">
                         <div>
                             <label class="block text-sm font-medium text-dark mb-2">Korean Example</label>
-                            <input type="text" name="Kexample" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="Korean sentence example" required>
+                            <input type="text" name="Kexample" class="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="Korean sentence example" required>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-dark mb-2">English Example</label>
-                            <input type="text" name="Eexample" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="English example" required>
+                            <input type="text" name="Eexample" class="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="English example" required>
                         </div>
                     </div>
-                    <div class="flex justify-end space-x-4 pt-6">
-                        <button type="button" id="cancelBtn" class="px-6 py-3 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors !rounded-button whitespace-nowrap">
+                    <div class="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 pt-4 sm:pt-6">
+                        <button type="button" id="cancelBtn" class="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors !rounded-button whitespace-nowrap">
                             Cancel
                         </button>
-                        <button type="submit" class="btn-primary custom-text-white px-6 py-3 !rounded-button font-medium whitespace-nowrap">
+                        <button type="submit" class="w-full sm:w-auto btn-primary custom-text-white px-4 sm:px-6 py-2 sm:py-3 !rounded-button font-medium whitespace-nowrap">
                             Add Grammar Rule
                         </button>
                     </div>
