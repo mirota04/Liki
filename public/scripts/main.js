@@ -1,3 +1,51 @@
+// Profile dropdown functionality
+function initProfileDropdown() {
+	const profileDropdownBtn = document.getElementById('profileDropdownBtn');
+	const profileDropdown = document.getElementById('profileDropdown');
+
+	if (profileDropdownBtn && profileDropdown) {
+		// Toggle dropdown on button click
+		profileDropdownBtn.addEventListener('click', function(e) {
+			e.stopPropagation();
+			profileDropdown.classList.toggle('hidden');
+		});
+
+		// Close dropdown when clicking outside
+		document.addEventListener('click', function(e) {
+			if (!profileDropdown.contains(e.target) && !profileDropdownBtn.contains(e.target)) {
+				profileDropdown.classList.add('hidden');
+			}
+		});
+
+		// Close dropdown on escape key
+		document.addEventListener('keydown', function(e) {
+			if (e.key === 'Escape') {
+				profileDropdown.classList.add('hidden');
+			}
+		});
+	}
+}
+
+// Logout function
+function logout() {
+	if (confirm('Are you sure you want to logout?')) {
+		fetch('/logout', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			}
+		})
+		.then(() => {
+			window.location.href = '/login';
+		})
+		.catch(error => {
+			console.error('Logout error:', error);
+			// Fallback: redirect to login anyway
+			window.location.href = '/login';
+		});
+	}
+}
+
 // Navigation function for client-side routing
 function navigateToPage(page) {
     // Prevent default link behavior
@@ -17,6 +65,9 @@ function navigateToPage(page) {
         case 'vocabulary':
             window.location.href = '/vocabulary';
             break;
+        case 'profile':
+            window.location.href = '/profile';
+            break;
         case 'login':
             window.location.href = '/login';
         default:
@@ -27,7 +78,10 @@ function navigateToPage(page) {
 
 // Progress animation
 document.addEventListener('DOMContentLoaded', function() {
-    const progressCircle = document.querySelector('.progress-ring-circle');
+	// Initialize profile dropdown
+	initProfileDropdown();
+	
+	const progressCircle = document.querySelector('.progress-ring-circle');
     const progressValue = 70;
     const circumference = 2 * Math.PI * 40;
     const offset = circumference - (progressValue / 100) * circumference;

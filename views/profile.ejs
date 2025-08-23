@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" type="image/png" href="/images/Picture2.png">
+	<title>Liki - Profile</title>
+
+	<!-- External CSS -->
+	<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+	<link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet">
+
+	<!-- Tailwind Config -->
+	<script>
+		tailwind.config = {
+			theme: {
+				extend: {
+					colors: {
+						primary: '#5F8396',
+						secondary: '#2F4A61',
+						neutral: '#BCB9AC',
+						warm: '#6F6558',
+						dark: '#242527',
+						'neutral-light': '#BCB9AC20'
+					},
+					borderRadius: {
+						'none': '0px',
+						'sm': '4px',
+						DEFAULT: '8px',
+						'md': '12px',
+						'lg': '16px',
+						'xl': '20px',
+						'2xl': '24px',
+						'3xl': '32px',
+						'full': '9999px',
+						'button': '8px'
+					},
+					fontFamily: {
+						'inter': ['Inter', 'sans-serif']
+					}
+				}
+			}
+		}
+	</script>
+
+	<!-- Custom CSS -->
+	<link rel="stylesheet" href="/styles/main.css">
+	<link rel="stylesheet" href="/styles/profile.css">
+</head>
+<body class="bg-gray-50 font-inter">
+	<!-- Header -->
+	<header class="bg-white/95 backdrop-blur-sm border-b border-neutral/20 sticky top-0 z-50">
+		<div class="w-full px-4 sm:px-6 py-3 sm:py-4">
+			<div class="flex items-center justify-between">
+				<div class="flex items-center space-x-6 sm:space-x-12">
+					<img onclick="navigateToPage('home')" src="/images/Picture2.png" alt="logo" style="height: 35px;">
+					<nav class="hidden md:flex items-center space-x-8">
+						<a href="#" onclick="navigateToPage('home')" class="text-dark hover:custom-text-primary transition-colors font-medium">Home</a>
+						<a href="#" onclick="navigateToPage('grammar')" class="text-dark hover:custom-text-primary transition-colors font-medium">Grammar</a>
+						<a href="#" onclick="navigateToPage('vocabulary')" class="text-dark hover:custom-text-primary transition-colors font-medium">Vocabulary</a>
+						<a href="#" onclick="navigateToPage('profile')" class="custom-text-primary font-semibold transition-colors font-medium">Profile</a>
+					</nav>
+
+				</div>
+				<div class="flex items-center space-x-4">
+					<button class="w-10 h-10 flex items-center justify-center text-warm hover:custom-text-primary transition-colors">
+						<i class="ri-notification-3-line ri-lg"></i>
+					</button>
+					<div class="relative">
+						<button id="profileDropdownBtn" class="w-10 h-10 flex items-center justify-center custom-bg-primary custom-text-white rounded-full hover:bg-secondary transition-colors">
+							<i class="ri-user-3-line"></i>
+						</button>
+						<div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2 hidden z-50">
+							<a href="#" onclick="navigateToPage('profile')" class="flex items-center px-4 py-2 text-sm text-dark hover:bg-gray-50 transition-colors">
+								<i class="ri-user-3-line mr-3 text-primary"></i>
+								Profile
+							</a>
+							<a href="#" class="flex items-center px-4 py-2 text-sm text-dark hover:bg-gray-50 transition-colors">
+								<i class="ri-settings-3-line mr-3 text-warm"></i>
+								Settings
+							</a>
+							<div class="border-t border-gray-100 my-1"></div>
+							<a href="#" onclick="logout()" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+								<i class="ri-logout-box-r-line mr-3"></i>
+								Logout
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</header>
+
+	<!-- Main Content -->
+	<main class="min-h-screen py-6 sm:py-8">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6">
+			<!-- Page Header -->
+			<div class="flex items-center justify-between mb-8">
+				<div class="flex items-center space-x-4">
+					<a href="#" onclick="navigateToPage('home')" class="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">
+						<i class="ri-arrow-left-line text-dark"></i>
+					</a>
+					<h1 class="text-3xl font-bold text-dark">Profile</h1>
+				</div>
+			</div>
+
+			<!-- User Card -->
+			<section class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-primary/10 mb-6 sm:mb-8">
+				<div class="flex items-center gap-4 sm:gap-6">
+					<div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full custom-bg-primary flex items-center justify-center custom-text-white text-xl sm:text-2xl font-semibold shadow-md">
+						<%= (username || 'U').charAt(0) %>
+					</div>
+					<div>
+						<div class="text-xl sm:text-2xl font-bold text-dark"><%= username %></div>
+						<div class="text-warm"><%= email %></div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Welcome Message -->
+			<section class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-primary/10 mb-6 sm:mb-8">
+				<div class="text-center">
+					<div class="w-16 h-16 flex items-center justify-center bg-primary/10 rounded-full mx-auto mb-4">
+						<i class="ri-user-heart-line custom-text-primary ri-2x"></i>
+					</div>
+					<h3 class="text-xl font-semibold text-dark mb-2">Welcome to Your Profile</h3>
+					<p class="text-warm">Start learning Korean by adding grammar rules and vocabulary words. Your progress will appear here as you build your knowledge.</p>
+				</div>
+			</section>
+
+			<!-- Achievements -->
+			<section class="mb-6 sm:mb-8">
+				<h2 class="text-xl font-semibold text-dark mb-4">Achievements</h2>
+				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+					<% (achievements || []).forEach(function(a){ %>
+					<div class="achievement-card rounded-xl p-4 border <%= a.unlocked ? 'border-primary/40' : 'border-neutral/20' %> bg-white">
+						<div class="flex items-center justify-between mb-2">
+							<div class="font-semibold text-dark"><%= a.title %></div>
+							<i class="ri-award-line <%= a.unlocked ? 'text-primary' : 'text-neutral' %>"></i>
+						</div>
+						<div class="text-sm text-warm"><%= a.description %></div>
+					</div>
+					<% }); %>
+				</div>
+			</section>
+
+			<!-- Today Lists -->
+			<section class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
+				<div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+					<div class="flex items-center justify-between mb-4">
+						<h3 class="text-lg font-semibold text-dark">Today's Grammar</h3>
+						<span class="text-sm text-warm"><%= (todayGrammar||[]).length %></span>
+					</div>
+					<div class="space-y-3">
+						<% if ((todayGrammar||[]).length === 0) { %>
+							<div class="text-sm text-warm">No grammar added today</div>
+						<% } %>
+						<% (todayGrammar||[]).forEach(function(g){ %>
+						<div class="p-4 rounded-xl border border-gray-100 bg-white">
+							<div class="korean-text text-base mb-1"><%= g.title %></div>
+							<div class="english-text text-sm"><%= g.explanation %></div>
+						</div>
+						<% }); %>
+					</div>
+				</div>
+
+				<div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+					<div class="flex items-center justify-between mb-4">
+						<h3 class="text-lg font-semibold text-dark">Today's Vocabulary</h3>
+						<span class="text-sm text-warm"><%= (todayVocab||[]).length %></span>
+					</div>
+					<div class="space-y-3">
+						<% if ((todayVocab||[]).length === 0) { %>
+							<div class="text-sm text-warm">No vocabulary added today</div>
+						<% } %>
+						<% (todayVocab||[]).forEach(function(v){ %>
+						<div class="dictionary-card p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+							<div class="flex-1">
+								<div class="korean-text text-base mb-1"><%= v.word %></div>
+								<div class="meaning-text text-sm"><%= v.meaning %> <%= v.meaning_geo ? '(' + v.meaning_geo + ')' : '' %></div>
+							</div>
+						</div>
+						<% }); %>
+					</div>
+				</div>
+			</section>
+
+			<!-- Weekly Stats -->
+			<section class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-primary/10 mb-6 sm:mb-8">
+				<div class="flex items-center justify-between mb-6">
+					<h2 class="text-xl font-semibold text-dark">This Week</h2>
+					<div class="text-sm text-warm">Total: <span class="font-medium text-dark"><%= grammarWeekTotal + vocabWeekTotal %></span></div>
+				</div>
+				<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+					<div class="stat-card rounded-xl p-4">
+						<div class="text-sm text-warm">Grammar</div>
+						<div class="text-2xl font-bold text-dark"><%= grammarWeekTotal %></div>
+					</div>
+					<div class="stat-card rounded-xl p-4">
+						<div class="text-sm text-warm">Vocabulary</div>
+						<div class="text-2xl font-bold text-dark"><%= vocabWeekTotal %></div>
+					</div>
+					<div class="stat-card rounded-xl p-4">
+						<div class="text-sm text-warm">Active Days</div>
+						<div class="text-2xl font-bold text-dark"><%= activeDays %>/7</div>
+					</div>
+					<div class="stat-card rounded-xl p-4">
+						<div class="text-sm text-warm">Peak Day</div>
+						<div class="text-2xl font-bold text-dark"><%= Math.max(...grammarCounts, ...vocabCounts) %></div>
+					</div>
+				</div>
+
+				<!-- Weekly Chart -->
+				<div class="w-full">
+					<div class="flex items-end gap-2 h-40">
+						<% for (let i = 0; i < labels.length; i++) { %>
+						<div class="flex-1 flex items-end gap-1">
+							<div class="w-1/2 rounded-t" style="background: linear-gradient(180deg, rgba(95,131,150,0.7) 0%, rgba(95,131,150,0.2) 100%); height:<%= Math.round((grammarCounts[i] / peak) * 100) %>%"></div>
+							<div class="w-1/2 rounded-t" style="background: linear-gradient(180deg, rgba(47,74,97,0.7) 0%, rgba(47,74,97,0.2) 100%); height:<%= Math.round((vocabCounts[i] / peak) * 100) %>%"></div>
+						</div>
+						<% } %>
+					</div>
+					<div class="flex justify-between mt-2 text-xs text-warm">
+						<% labels.forEach(function(l){ %>
+						<span><%= l %></span>
+						<% }); %>
+					</div>
+				</div>
+			</section>
+		</div>
+	</main>
+
+	<!-- Scripts -->
+	<script src="/scripts/main.js"></script>
+	<script src="/scripts/profile.js"></script>
+
+	<!-- Mobile bottom nav -->
+	<nav class="fixed bottom-0 inset-x-0 bg-white border-t border-neutral/20 md:hidden z-50">
+		<div class="flex justify-around py-2">
+			<button onclick="navigateToPage('home')" class="flex flex-col items-center text-dark">
+				<i class="ri-home-4-line"></i>
+				<span class="text-xs">Home</span>
+			</button>
+			<button onclick="navigateToPage('grammar')" class="flex flex-col items-center text-dark">
+				<i class="ri-chat-3-line"></i>
+				<span class="text-xs">Grammar</span>
+			</button>
+			<button onclick="navigateToPage('vocabulary')" class="flex flex-col items-center text-dark">
+				<i class="ri-book-2-line"></i>
+				<span class="text-xs">Vocab</span>
+			</button>
+			<button onclick="navigateToPage('profile')" class="flex flex-col items-center text-primary">
+				<i class="ri-user-3-line"></i>
+				<span class="text-xs">Profile</span>
+			</button>
+		</div>
+	</nav>
+</body>
+</html>
+

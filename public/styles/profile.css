@@ -1,0 +1,43 @@
+.achievement-card {
+	background: linear-gradient(135deg, #E6EEF3 0%, #F3F7FA 100%);
+	border: 1px solid #D7E3EB;
+	transition: all 0.3s ease;
+}
+
+.achievement-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 8px 25px rgba(95, 131, 150, 0.1);
+}
+
+.stat-card {
+	background: linear-gradient(135deg, #E6EEF3 0%, #F3F7FA 100%);
+	border: 1px solid #D7E3EB;
+}
+
+.korean-text {
+	font-weight: 600;
+	color: #2F4A61;
+}
+
+.english-text {
+	color: #6F6558;
+	line-height: 1.6;
+}
+
+.custom-text-white { color: #ffffff !important; }
+.custom-text-primary { color: #5F8396 !important; }
+.custom-bg-primary { background-color: #5F8396 !important; }
+.hover\:custom-text-primary:hover { color: #5F8396 !important; }
+
+/* Subtle section separators */
+.section-divider {
+	height: 1px;
+	background: linear-gradient(90deg, transparent, #D7E3EB, transparent);
+}
+
+@media (max-width: 768px) {
+	/* Add spacing above bottom nav */
+	main { padding-bottom: 5rem; }
+}
+
+

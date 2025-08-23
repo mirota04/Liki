@@ -62,17 +62,33 @@
 						<a href="#" onclick="navigateToPage('home')" class="text-dark hover:custom-text-primary transition-colors font-medium">Home</a>
 						<a href="#" onclick="navigateToPage('grammar')" class="text-dark hover:custom-text-primary transition-colors font-medium">Grammar</a>
 						<a href="#" onclick="navigateToPage('vocabulary')" class="custom-text-primary font-semibold transition-colors font-medium">Vocabulary</a>
-						<a href="#" class="text-dark hover:custom-text-primary transition-colors font-medium">Practice</a>
-						<a href="#" class="text-dark hover:custom-text-primary transition-colors font-medium">Profile</a>
+						<a href="#" onclick="navigateToPage('profile')" class="text-dark hover:custom-text-primary transition-colors font-medium">Profile</a>
 					</nav>
 				</div>
 				<div class="flex items-center space-x-4">
 					<button class="w-10 h-10 flex items-center justify-center text-warm hover:custom-text-primary transition-colors">
 						<i class="ri-notification-3-line ri-lg"></i>
 					</button>
-					<button class="w-10 h-10 flex items-center justify-center custom-bg-primary custom-text-white rounded-full hover:bg-secondary transition-colors">
-						<i class="ri-user-3-line"></i>
-					</button>
+					<div class="relative">
+						<button id="profileDropdownBtn" class="w-10 h-10 flex items-center justify-center custom-bg-primary custom-text-white rounded-full hover:bg-secondary transition-colors">
+							<i class="ri-user-3-line"></i>
+						</button>
+						<div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2 hidden z-50">
+							<a href="#" onclick="navigateToPage('profile')" class="flex items-center px-4 py-2 text-sm text-dark hover:bg-gray-50 transition-colors">
+								<i class="ri-user-3-line mr-3 text-primary"></i>
+								Profile
+							</a>
+							<a href="#" onclick="navigateToPage('settings')" class="flex items-center px-4 py-2 text-sm text-dark hover:bg-gray-50 transition-colors">
+								<i class="ri-settings-3-line mr-3 text-warm"></i>
+								Settings
+							</a>
+							<div class="border-t border-gray-100 my-1"></div>
+							<a href="#" onclick="logout()" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+								<i class="ri-logout-box-r-line mr-3"></i>
+								Logout
+							</a>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>

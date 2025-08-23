@@ -17,7 +17,8 @@ CREATE TABLE Grammar (
     explanation TEXT NOT NULL,
     Kexample TEXT NOT NULL,
     Eexample TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    user_id INT, FOREIGN KEY (user_id) REFERENCES Users(id)
 );
 
 DROP TABLE IF EXISTS Dictionary;
@@ -26,5 +27,6 @@ CREATE TABLE Dictionary (
     word TEXT NOT NULL,
     meaning TEXT NOT NULL,
     meaning_geo TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    user_id INT, FOREIGN KEY (user_id) REFERENCES Users(id)
 );

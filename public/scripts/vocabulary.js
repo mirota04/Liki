@@ -169,12 +169,36 @@ document.addEventListener('DOMContentLoaded', function() {
 			return;
 		}
 
-		addWordToDictionary(korean, meaning);
-		// Clear inputs and close modal
-		if (koreanWordInput) koreanWordInput.value = '';
-		if (englishMeaningInput) englishMeaningInput.value = '';
-		if (georgianInput) georgianInput.value = '';
-		closeModal();
+		// Send to backend
+		fetch('/vocabulary', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				word: korean,
+				meaning: meaning,
+				meaning_geo: georgian
+			})
+		})
+		.then(response => response.json())
+		.then(data => {
+			if (data.success) {
+				addWordToDictionary(korean, meaning);
+				// Clear inputs and close modal
+				if (koreanWordInput) koreanWordInput.value = '';
+				if (englishMeaningInput) englishMeaningInput.value = '';
+				if (georgianInput) georgianInput.value = '';
+				closeModal();
+				showNotification('Word added to dictionary!', 'success');
+			} else {
+				showNotification(data.error || 'Failed to add word', 'error');
+			}
+		})
+		.catch(error => {
+			console.error('Error:', error);
+			showNotification('Failed to add word to dictionary', 'error');
+		});
 	}
 
 	// Event bindings
