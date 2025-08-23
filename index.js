@@ -101,29 +101,49 @@ app.post("/grammar", async (req, res) => {
   }
 });
 
-app.get("/vocabulary", requireAuth, (req, res) => {
-  res.render("vocabulary.ejs");
+app.get("/vocabulary", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    
+    // Fetch 3 random words from user's dictionary
+    const randomWordsQuery = `
+      SELECT word, meaning, meaning_geo 
+      FROM Dictionary 
+      WHERE user_id = $1 
+      ORDER BY RANDOM() 
+      LIMIT 3
+    `;
+    
+    const result = await db.query(randomWordsQuery, [userId]);
+    const randomWords = result.rows;
+    
+    res.render("vocabulary.ejs", { randomWords });
+  } catch (err) {
+    console.error('Error fetching vocabulary:', err);
+    res.render("vocabulary.ejs", { randomWords: [] });
+  }
 });
 
 app.post("/vocabulary", requireAuth, async (req, res) => {
   try {
-    console.log('Raw request body:', req.body);
-    console.log('Request headers:', req.headers);
-    
     const { word, meaning, meaning_geo } = req.body;
     const userId = req.session.user.id;
 
-    console.log('Adding word to dictionary:', { word, meaning, meaning_geo, userId });
+    // Check if word already exists for this user
+    const checkQuery = "SELECT id FROM Dictionary WHERE word = $1 AND user_id = $2";
+    const existingWord = await db.query(checkQuery, [word, userId]);
 
-    // Just try to insert directly - no checks for now
+    if (existingWord.rows.length > 0) {
+      return res.status(409).json({ error: 'This word is already in your dictionary' });
+    }
+
+    // Insert new word
     const insertQuery = "INSERT INTO Dictionary (word, meaning, meaning_geo, user_id) VALUES ($1, $2, $3, $4) RETURNING id";
     const result = await db.query(insertQuery, [word, meaning, meaning_geo || null, userId]);
     
-    console.log('Word added successfully:', result.rows[0]);
     res.json({ success: true, id: result.rows[0].id });
   } catch (err) {
     console.error('Error inserting vocabulary:', err);
-    console.error('Error details:', err.message, err.code, err.detail);
     res.status(500).json({ error: 'Failed to add word to dictionary' });
   }
 });

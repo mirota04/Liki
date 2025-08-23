@@ -171,6 +171,20 @@ document.addEventListener('DOMContentLoaded', function() {
 		const meaning = englishMeaningInput.value.trim();
 		const georgian = georgianInput.value.trim();
 
+		// Clear any previous error highlighting
+		koreanWordInput.classList.remove('border-red-500');
+		englishMeaningInput.classList.remove('border-red-500');
+
+		// Validate required fields
+		if (!korean || !meaning) {
+			// Highlight empty required fields
+			if (!korean) koreanWordInput.classList.add('border-red-500');
+			if (!meaning) englishMeaningInput.classList.add('border-red-500');
+			
+			showNotification('Please fill in both Korean word and English meaning', 'error');
+			return;
+		}
+
 		console.log('Form data to send:', { korean, meaning, georgian });
 
 		// Send to backend
@@ -211,7 +225,34 @@ document.addEventListener('DOMContentLoaded', function() {
 		addToDictionaryBtn.addEventListener('click', function() {
 			const korean = searchResult.querySelector('.korean-text').textContent;
 			const meaning = searchResult.querySelector('.meaning-text').textContent;
-			addWordToDictionary(korean, meaning);
+			
+			// Add to dictionary via server
+			fetch('/vocabulary', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					word: korean,
+					meaning: meaning,
+					meaning_geo: null
+				})
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (data.success) {
+					addWordToDictionary(korean, meaning);
+					showNotification('Word added to dictionary!', 'success');
+				} else if (data.error && data.error.includes('already in your dictionary')) {
+					showNotification('Word already in your dictionary!', 'warning');
+				} else {
+					showNotification(data.error || 'Failed to add word', 'error');
+				}
+			})
+			.catch(error => {
+				console.error('Error:', error);
+				showNotification('Failed to add word to dictionary', 'error');
+			});
 		});
 	}
 
@@ -225,6 +266,24 @@ document.addEventListener('DOMContentLoaded', function() {
 	} else {
 		console.log('Form not found!');
 	}
+	
+	// Real-time validation feedback
+	if (koreanWordInput) {
+		koreanWordInput.addEventListener('input', function() {
+			if (this.value.trim()) {
+				this.classList.remove('border-red-500');
+			}
+		});
+	}
+	
+	if (englishMeaningInput) {
+		englishMeaningInput.addEventListener('input', function() {
+			if (this.value.trim()) {
+				this.classList.remove('border-red-500');
+			}
+		});
+	}
+	
 	// Close on backdrop click
 	if (addWordModal) {
 		addWordModal.addEventListener('click', function(e) {

@@ -170,43 +170,27 @@
 			</div>
 
 			<div id="dictionaryList" class="space-y-4">
-				<div class="dictionary-card p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-					<div class="flex-1">
-						<div class="korean-text text-lg mb-1">감사합니다</div>
-						<div class="meaning-text text-sm">Thank you (formal)</div>
+				<% if (randomWords && randomWords.length > 0) { %>
+					<% randomWords.forEach(function(word) { %>
+					<div class="dictionary-card p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+						<div class="flex-1">
+							<div class="korean-text text-lg mb-1"><%= word.word %></div>
+							<div class="meaning-text text-sm"><%= word.meaning %><% if (word.meaning_geo) { %> (<%= word.meaning_geo %>)<% } %></div>
+						</div>
+						<button class="remove-btn w-8 h-8 flex items-center justify-center hover:bg-red-50 rounded-full transition-colors">
+							<i class="ri-close-line text-red-400 hover:text-red-600"></i>
+						</button>
 					</div>
-					<button class="remove-btn w-8 h-8 flex items-center justify-center hover:bg-red-50 rounded-full transition-colors">
-						<i class="ri-close-line text-red-400 hover:text-red-600"></i>
-					</button>
-				</div>
-
-				<div class="dictionary-card p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-					<div class="flex-1">
-						<div class="korean-text text-lg mb-1">사랑해요</div>
-						<div class="meaning-text text-sm">I love you</div>
+					<% }); %>
+				<% } else { %>
+					<div id="emptyDictionary" class="text-center py-12">
+						<div class="w-16 h-16 flex items-center justify-center bg-gray-100 rounded-full mx-auto mb-4">
+							<i class="ri-book-open-line text-gray-400 ri-2x"></i>
+						</div>
+						<h4 class="text-lg font-medium text-dark mb-2">Your Dictionary is Empty</h4>
+						<p class="text-warm">Search for Korean words and add them to build your personal vocabulary collection</p>
 					</div>
-					<button class="remove-btn w-8 h-8 flex items-center justify-center hover:bg-red-50 rounded-full transition-colors">
-						<i class="ri-close-line text-red-400 hover:text-red-600"></i>
-					</button>
-				</div>
-
-				<div class="dictionary-card p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-					<div class="flex-1">
-						<div class="korean-text text-lg mb-1">학교</div>
-						<div class="meaning-text text-sm">School</div>
-					</div>
-					<button class="remove-btn w-8 h-8 flex items-center justify-center hover:bg-red-50 rounded-full transition-colors">
-						<i class="ri-close-line text-red-400 hover:text-red-600"></i>
-					</button>
-				</div>
-			</div>
-
-			<div id="emptyDictionary" class="hidden text-center py-12">
-				<div class="w-16 h-16 flex items-center justify-center bg-gray-100 rounded-full mx-auto mb-4">
-					<i class="ri-book-open-line text-gray-400 ri-2x"></i>
-				</div>
-				<h4 class="text-lg font-medium text-dark mb-2">Your Dictionary is Empty</h4>
-				<p class="text-warm">Search for Korean words and add them to build your personal vocabulary collection</p>
+				<% } %>
 			</div>
 		</div>
 	</main>
