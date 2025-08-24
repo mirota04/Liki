@@ -124,6 +124,26 @@ app.get("/vocabulary", requireAuth, async (req, res) => {
   }
 });
 
+// Get all dictionary words for the view all modal
+app.get("/api/dictionary", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    
+    const query = `
+      SELECT word, meaning, meaning_geo, created_at 
+      FROM Dictionary 
+      WHERE user_id = $1 
+      ORDER BY created_at DESC
+    `;
+    
+    const result = await db.query(query, [userId]);
+    res.json({ success: true, words: result.rows });
+  } catch (err) {
+    console.error('Error fetching dictionary:', err);
+    res.status(500).json({ error: 'Failed to fetch dictionary' });
+  }
+});
+
 app.post("/vocabulary", requireAuth, async (req, res) => {
   try {
     const { word, meaning, meaning_geo } = req.body;

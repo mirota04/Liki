@@ -15,6 +15,13 @@ document.addEventListener('DOMContentLoaded', function() {
 	const koreanWordInput = document.getElementById('koreanWord');
 	const englishMeaningInput = document.getElementById('meaning');
 	const georgianInput = document.getElementById('georgianTranslation');
+	
+	// View All Modal elements
+	const viewAllBtn = document.getElementById('viewAllBtn');
+	const viewAllModal = document.getElementById('viewAllModal');
+	const closeViewAllModalBtn = document.getElementById('closeViewAllModal');
+	const dictionarySearchInput = document.getElementById('dictionarySearchInput');
+	const dictionaryWordsList = document.getElementById('dictionaryWordsList');
 
 	// Debug: Check if all elements are found
 	console.log('Elements found:', {
@@ -165,6 +172,91 @@ document.addEventListener('DOMContentLoaded', function() {
 		addWordModal.classList.add('hidden');
 	}
 
+	// View All Modal functions
+	function openViewAllModal() {
+		if (!viewAllModal) return;
+		viewAllModal.classList.remove('hidden');
+		loadAllDictionaryWords();
+	}
+
+	function closeViewAllModal() {
+		if (!viewAllModal) return;
+		viewAllModal.classList.add('hidden');
+		// Clear search
+		if (dictionarySearchInput) dictionarySearchInput.value = '';
+	}
+
+	async function loadAllDictionaryWords() {
+		try {
+			const response = await fetch('/api/dictionary');
+			const data = await response.json();
+			
+			if (data.success) {
+				displayAllDictionaryWords(data.words);
+			} else {
+				showNotification('Failed to load dictionary', 'error');
+			}
+		} catch (error) {
+			console.error('Error loading dictionary:', error);
+			showNotification('Failed to load dictionary', 'error');
+		}
+	}
+
+	function displayAllDictionaryWords(words) {
+		if (!dictionaryWordsList) return;
+		
+		dictionaryWordsList.innerHTML = '';
+		
+		if (words.length === 0) {
+			dictionaryWordsList.innerHTML = `
+				<div class="text-center py-6 sm:py-8 text-gray-500 h-full flex flex-col items-center justify-center">
+					<i class="ri-book-open-line text-3xl sm:text-4xl mb-2"></i>
+					<p class="text-sm sm:text-base">No words in your dictionary yet</p>
+				</div>
+			`;
+			return;
+		}
+		
+		words.forEach(word => {
+			const wordCard = document.createElement('div');
+			wordCard.className = 'dictionary-card p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 mb-2 sm:mb-3 last:mb-0';
+			wordCard.innerHTML = `
+				<div class="flex-1">
+					<div class="korean-text text-base sm:text-lg mb-1">${word.word}</div>
+					<div class="meaning-text text-xs sm:text-sm">${word.meaning}${word.meaning_geo ? ` (${word.meaning_geo})` : ''}</div>
+					<div class="text-xs text-gray-400 mt-1">Added: ${new Date(word.created_at).toLocaleDateString()}</div>
+				</div>
+				<button class="remove-btn w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-red-50 rounded-full transition-colors self-end sm:self-auto">
+					<i class="ri-close-line text-red-400 hover:text-red-600 text-sm sm:text-base"></i>
+				</button>
+			`;
+			
+			// Add remove functionality
+			const removeBtn = wordCard.querySelector('.remove-btn');
+			removeBtn.addEventListener('click', function() {
+				wordCard.remove();
+				showNotification('Word removed from dictionary', 'success');
+			});
+			
+			dictionaryWordsList.appendChild(wordCard);
+		});
+	}
+
+	function searchDictionaryWords(searchTerm) {
+		if (!dictionaryWordsList) return;
+		
+		const wordCards = dictionaryWordsList.querySelectorAll('.dictionary-card');
+		const searchLower = searchTerm.toLowerCase();
+		
+		wordCards.forEach(card => {
+			const koreanText = card.querySelector('.korean-text').textContent.toLowerCase();
+			const meaningText = card.querySelector('.meaning-text').textContent.toLowerCase();
+			
+			const matches = koreanText.includes(searchLower) || meaningText.includes(searchLower);
+			card.style.display = matches ? 'flex' : 'none';
+		});
+	}
+
 	function handleFormSubmit(e) {
 		e.preventDefault();
 		const korean = koreanWordInput.value.trim();
@@ -185,6 +277,14 @@ document.addEventListener('DOMContentLoaded', function() {
 			return;
 		}
 
+		// Validate that Korean word actually contains Korean characters
+		const koreanRegex = /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/;
+		if (!koreanRegex.test(korean)) {
+			koreanWordInput.classList.add('border-red-500');
+			showNotification('Korean word must contain Korean characters (한글)', 'error');
+			return;
+		}
+
 		console.log('Form data to send:', { korean, meaning, georgian });
 
 		// Send to backend
@@ -202,12 +302,13 @@ document.addEventListener('DOMContentLoaded', function() {
 		.then(response => response.json())
 		.then(data => {
 			if (data.success) {
-				addWordToDictionary(korean, meaning);
-				// Clear inputs and close modal
+				// Don't add to the page display - just close modal and clear inputs
+				// The "My Dictionary" section should only show random words from DB
 				koreanWordInput.value = '';
 				englishMeaningInput.value = '';
 				georgianInput.value = '';
 				closeModal();
+				showNotification('Word added to dictionary!', 'success');
 			} else {
 				showNotification(data.error || 'Failed to add word', 'error');
 			}
@@ -226,6 +327,13 @@ document.addEventListener('DOMContentLoaded', function() {
 			const korean = searchResult.querySelector('.korean-text').textContent;
 			const meaning = searchResult.querySelector('.meaning-text').textContent;
 			
+			// Validate that Korean word actually contains Korean characters
+			const koreanRegex = /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/;
+			if (!koreanRegex.test(korean)) {
+				showNotification('Cannot add: Korean word must contain Korean characters (한글)', 'error');
+				return;
+			}
+			
 			// Add to dictionary via server
 			fetch('/vocabulary', {
 				method: 'POST',
@@ -241,7 +349,8 @@ document.addEventListener('DOMContentLoaded', function() {
 			.then(response => response.json())
 			.then(data => {
 				if (data.success) {
-					addWordToDictionary(korean, meaning);
+					// Don't add to the page display - just show success message
+					// The "My Dictionary" section should only show random words from DB
 					showNotification('Word added to dictionary!', 'success');
 				} else if (data.error && data.error.includes('already in your dictionary')) {
 					showNotification('Word already in your dictionary!', 'warning');
@@ -265,6 +374,23 @@ document.addEventListener('DOMContentLoaded', function() {
 		addWordForm.addEventListener('submit', handleFormSubmit);
 	} else {
 		console.log('Form not found!');
+	}
+	
+	// View All Modal events
+	if (viewAllBtn) viewAllBtn.addEventListener('click', openViewAllModal);
+	if (closeViewAllModalBtn) closeViewAllModalBtn.addEventListener('click', closeViewAllModal);
+	if (viewAllModal) {
+		viewAllModal.addEventListener('click', function(e) {
+			if (e.target === viewAllModal) closeViewAllModal();
+		});
+	}
+	
+	// Dictionary search functionality
+	if (dictionarySearchInput) {
+		dictionarySearchInput.addEventListener('input', function() {
+			const searchTerm = this.value.trim();
+			searchDictionaryWords(searchTerm);
+		});
 	}
 	
 	// Real-time validation feedback
