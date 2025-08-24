@@ -37,4 +37,6 @@ CREATE TABLE Achievements (
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     icon TEXT NOT NULL
+    status BOOLEAN DEFAULT FALSE,
+    user_id INT, FOREIGN KEY (user_id) REFERENCES Users(id)
 );

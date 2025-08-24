@@ -302,7 +302,7 @@ app.get("/api/translate", async (req, res) => {
     const koreanDef = item.sense?.[0]?.definition?.[0] ?? '';
     const englishExplanation = item.sense?.[0]?.translation?.[0]?.trans_dfn?.[0] ?? '';
 
-    res.json({
+    res.json({ 
       koreanWord,
       englishWord: englishDef,
       koreanDef,
