@@ -134,6 +134,54 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Achievements modal open/close handlers (home page)
+document.addEventListener('DOMContentLoaded', function() {
+    const openAllAchievementsBtn = document.getElementById('openAllAchievements');
+    const achievementsModal = document.getElementById('achievementsModal');
+    const closeAchievementsModal = document.getElementById('closeAchievementsModal');
+
+    if (openAllAchievementsBtn && achievementsModal) {
+        openAllAchievementsBtn.addEventListener('click', function() {
+            achievementsModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+    }
+    if (closeAchievementsModal && achievementsModal) {
+        closeAchievementsModal.addEventListener('click', function() {
+            achievementsModal.classList.add('hidden');
+            document.body.style.overflow = '';
+        });
+    }
+    if (achievementsModal) {
+        achievementsModal.addEventListener('click', function(e) {
+            if (e.target === achievementsModal) {
+                achievementsModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        });
+    }
+});
+
+// Achievements count updater (Home)
+(function(){
+    async function refreshAchievementsCount(){
+        try {
+            const res = await fetch('/api/achievements/count');
+            if (!res.ok) return;
+            const data = await res.json();
+            const count = data.count ?? 0;
+            
+            const achievementsEl = document.getElementById('achievementsCount');
+            if (achievementsEl) achievementsEl.textContent = String(count);
+        } catch (e) {}
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        refreshAchievementsCount();
+        setInterval(refreshAchievementsCount, 60000); // Update every minute
+    });
+})();
+
 // Card interactions
 document.addEventListener('DOMContentLoaded', function() {
     const cards = document.querySelectorAll('.card-hover');
@@ -407,3 +455,151 @@ window.addEventListener('click', (event) => {
 // document.addEventListener('submit', (event) => {
 //     event.preventDefault();
 // }, true);
+
+// Heartbeat tracker for streaks
+(function(){
+    const HEARTBEAT_INTERVAL_MS = 30000;
+    const IDLE_TIMEOUT_MS = 600000; // 10 minutes - consider idle if no input for 10 minutes
+
+    let lastActivityTs = Date.now();
+    let intervalId = null;
+
+    function markActivity() {
+        lastActivityTs = Date.now();
+    }
+
+    function isActive() {
+        const now = Date.now();
+        const notIdle = (now - lastActivityTs) <= IDLE_TIMEOUT_MS;
+        const visible = document.visibilityState === 'visible';
+        return visible && notIdle;
+    }
+
+    async function heartbeat() {
+        if (!isActive()) return;
+        try {
+            await fetch('/api/activity/heartbeat', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        } catch (e) {
+            // silent fail
+        }
+    }
+
+    function startHeartbeat() {
+        if (intervalId) return;
+        intervalId = setInterval(heartbeat, HEARTBEAT_INTERVAL_MS);
+    }
+
+    function stopHeartbeat() {
+        if (intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
+        }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            startHeartbeat();
+        } else {
+            stopHeartbeat();
+        }
+    });
+
+    ['mousemove','keydown','scroll','touchstart','click'].forEach(evt => {
+        window.addEventListener(evt, markActivity, { passive: true });
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        markActivity();
+        if (document.visibilityState === 'visible') startHeartbeat();
+    });
+})();
+
+// Streak UI updater (home page)
+(function(){
+    const THRESHOLD = 3600;
+    async function refreshStreakUI(){
+        try {
+            const res = await fetch('/api/streak');
+            if (!res.ok) return;
+            const data = await res.json();
+            const streak = data.currentStreak ?? 0;
+            const seconds = data.activeSeconds ?? 0;
+            const pct = Math.min(100, Math.round((seconds / THRESHOLD) * 100));
+
+            const streakCount = document.getElementById('streakCount');
+            const streakBadgeText = document.getElementById('streakBadgeText');
+            const pctEl = document.getElementById('todayProgressPct');
+            const progressCircle = document.querySelector('.progress-ring-circle');
+
+            if (streakCount) streakCount.textContent = String(streak);
+            if (streakBadgeText) streakBadgeText.textContent = `${streak} day streak`;
+            if (pctEl) pctEl.textContent = `${pct}%`;
+
+            // Update ring stroke offset if present
+            if (progressCircle) {
+                const circumference = 2 * Math.PI * 40; // r=40 as in SVG
+                const offset = circumference - (pct / 100) * circumference;
+                progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+                progressCircle.style.strokeDashoffset = offset;
+            }
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        refreshStreakUI();
+        setInterval(refreshStreakUI, 30000);
+    });
+})();
+
+// Weekly stats UI (Home)
+(function(){
+    function formatHoursMinutes(totalSeconds){
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        return { hours, minutes };
+    }
+
+    async function refreshWeeklyUI(){
+        try {
+            const [weekRes, todayRes] = await Promise.all([
+                fetch('/api/stats/week'),
+                fetch('/api/streak')
+            ]);
+            if (!weekRes.ok) return;
+            const weekData = await weekRes.json();
+            const total = weekData.totalSeconds ?? 0;
+            const { hours } = formatHoursMinutes(total);
+
+            const hoursEl = document.getElementById('hoursStudiedValue');
+            const deltaEl = document.getElementById('hoursStudiedDelta');
+            const barEl = document.getElementById('hoursStudiedBar');
+
+            if (hoursEl) hoursEl.textContent = String(hours);
+
+            // Progress bar vs weekly goal: 10 hours
+            const WEEK_GOAL_SECONDS = 10 * 3600;
+            const pct = Math.min(100, Math.round((total / WEEK_GOAL_SECONDS) * 100));
+            if (barEl) barEl.style.width = `${pct}%`;
+
+            // Today delta text
+            if (todayRes && todayRes.ok) {
+                const todayData = await todayRes.json();
+                const todaySeconds = todayData.activeSeconds ?? 0;
+                const { hours: th, minutes: tm } = formatHoursMinutes(todaySeconds);
+                if (deltaEl) {
+                    const parts = [];
+                    if (th > 0) parts.push(`${th}h`);
+                    if (tm > 0 || th === 0) parts.push(`${tm}m`);
+                    deltaEl.textContent = `+${parts.join(' ')} today`;
+                }
+            }
+        } catch (e) {}
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        refreshWeeklyUI();
+        setInterval(refreshWeeklyUI, 60000);
+    });
+})();

@@ -13,6 +13,7 @@ const saltRounds = 10;
 env.config();
 
 const Korean_API_KEY = process.env.KOREAN_API_KEY;
+const ACHIEVEMENT_TEMPLATE_USER_ID = Number(process.env.ACHIEVEMENT_TEMPLATE_USER_ID || 3);
 
 // Set up EJS as the view engine
 app.set('view engine', 'ejs');
@@ -52,10 +53,70 @@ app.get("/", (req, res) => {
 app.get("/home", async (req, res) => {
   try {
     const username = req.session?.user?.username || null;
+    const userId = req.session?.user?.id || null;
     const displayName = username ? username.charAt(0).toUpperCase() + username.slice(1) : null;
-    res.render("index.ejs", { username: displayName });
+
+    let achievementsRecent = [];
+    let achievementsAll = [];
+
+    if (userId) {
+      const recentQuery = `
+        SELECT id, title, description, icon, status
+        FROM achievements
+        WHERE user_id = $1
+        ORDER BY RANDOM()
+        LIMIT 3
+      `;
+      const allQuery = `
+        SELECT id, title, description, icon, status
+        FROM achievements
+        WHERE user_id = $1
+        ORDER BY id
+      `;
+      
+      // First check if user has any achievements
+      const checkQuery = "SELECT COUNT(*) FROM achievements WHERE user_id = $1";
+      const checkResult = await db.query(checkQuery, [userId]);
+      const hasAchievements = parseInt(checkResult.rows[0].count) > 0;
+
+      if (!hasAchievements) {
+        // Seed achievements for existing user who doesn't have any
+        try {
+          await db.query(
+            `INSERT INTO achievements (title, description, icon, status, user_id)
+             SELECT title, description, icon, false AS status, $1 AS user_id
+             FROM achievements
+             WHERE user_id = $2`,
+            [userId, ACHIEVEMENT_TEMPLATE_USER_ID]
+          );
+          console.log(`Seeded achievements for existing user ${userId}`);
+        } catch (seedErr) {
+          console.error('Error seeding achievements for existing user:', seedErr);
+        }
+      }
+
+      // Now fetch achievements
+      const [recentRes, allRes] = await Promise.all([
+        db.query(recentQuery, [userId]),
+        db.query(allQuery, [userId])
+      ]);
+      achievementsRecent = recentRes.rows || [];
+      achievementsAll = allRes.rows || [];
+
+      // Display fallback: if still empty, show template achievements (read-only)
+      if ((achievementsAll || []).length === 0) {
+        const [tplRecent, tplAll] = await Promise.all([
+          db.query(recentQuery, [ACHIEVEMENT_TEMPLATE_USER_ID]),
+          db.query(allQuery, [ACHIEVEMENT_TEMPLATE_USER_ID])
+        ]);
+        achievementsRecent = tplRecent.rows || [];
+        achievementsAll = tplAll.rows || [];
+      }
+    }
+
+    res.render("index.ejs", { username: displayName, achievementsRecent, achievementsAll });
   } catch (e) {
-    res.render("index.ejs", { username: null });
+    res.render("index.ejs", { username: null, achievementsRecent: [], achievementsAll: [] });
   }
 });
 
@@ -221,6 +282,15 @@ app.get("/profile", requireAuth, async (req, res) => {
       db.query(weekVocabQuery, [user.id])
     ]);
 
+    // Fetch user achievements from DB
+    const userAchievementsRes = await db.query(
+      `SELECT title, description, icon, status
+       FROM achievements
+       WHERE user_id = $1
+       ORDER BY id`,
+      [user.id]
+    );
+
     const labels = [];
     const grammarCounts = new Array(7).fill(0);
     const vocabCounts = new Array(7).fill(0);
@@ -267,6 +337,7 @@ app.get("/profile", requireAuth, async (req, res) => {
       user: dbUser,
       todayGrammar: todayGrammarRes.rows || [],
       todayVocab: todayVocabRes.rows || [],
+      userAchievements: userAchievementsRes.rows || [],
       labels,
       grammarCounts,
       vocabCounts,
@@ -397,6 +468,20 @@ app.post("/register", async (req, res) => {
             [username, email, hash]
           );
           const newUserId = insertRes.rows?.[0]?.id;
+
+          // Seed achievements for the new user by copying from a template user
+          try {
+            await db.query(
+              `INSERT INTO achievements (title, description, icon, status, user_id)
+               SELECT title, description, icon, false AS status, $1 AS user_id
+               FROM achievements
+               WHERE user_id = $2`,
+              [newUserId, ACHIEVEMENT_TEMPLATE_USER_ID]
+            );
+          } catch (seedErr) {
+            console.error('Error seeding achievements for new user:', seedErr);
+          }
+
           console.log(`New user registered: ${username}`);
           req.session.user = { id: newUserId, username, email };
           req.session.save(() => {
@@ -408,6 +493,210 @@ app.post("/register", async (req, res) => {
   } catch (err) {
     console.log(err);
     res.redirect('/register?error=server_error');
+  }
+});
+
+// Heartbeat: track active seconds and update streak
+app.post('/api/activity/heartbeat', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const now = new Date();
+
+    // Fetch today's activity row
+    const actRes = await db.query(
+      `SELECT id, active_seconds, last_heartbeat
+       FROM User_Activity
+       WHERE user_id = $1 AND activity_date = CURRENT_DATE`,
+      [userId]
+    );
+
+    let prevSeconds = 0;
+    let increment = 30; // default credit per heartbeat
+
+    if (actRes.rows.length > 0) {
+      const row = actRes.rows[0];
+      prevSeconds = row.active_seconds || 0;
+      if (row.last_heartbeat) {
+        const last = new Date(row.last_heartbeat);
+        const delta = Math.floor((now - last) / 1000);
+        // credit bounded delta to avoid double-count across missed timers
+        increment = Math.max(0, Math.min(delta, 120));
+      }
+      await db.query(
+        `UPDATE User_Activity
+         SET active_seconds = active_seconds + $1,
+             last_heartbeat = $2
+         WHERE id = $3`,
+        [increment, now, row.id]
+      );
+    } else {
+      // Create today's row
+      await db.query(
+        `INSERT INTO User_Activity (user_id, activity_date, active_seconds, last_heartbeat)
+         VALUES ($1, CURRENT_DATE, $2, $3)
+         ON CONFLICT (user_id, activity_date)
+         DO UPDATE SET active_seconds = User_Activity.active_seconds + EXCLUDED.active_seconds,
+                       last_heartbeat = EXCLUDED.last_heartbeat`,
+        [userId, increment, now]
+      );
+    }
+
+    const postRes = await db.query(
+      `SELECT active_seconds FROM User_Activity WHERE user_id = $1 AND activity_date = CURRENT_DATE`,
+      [userId]
+    );
+    const activeSeconds = postRes.rows?.[0]?.active_seconds ?? (prevSeconds + increment);
+
+    // Upsert weekly rollup for current week (Monday-based)
+    await db.query(
+      `INSERT INTO User_Activity_Weekly (user_id, week_start, total_seconds)
+       SELECT $1 AS user_id,
+              date_trunc('week', CURRENT_DATE)::date AS week_start,
+              COALESCE(SUM(active_seconds),0)::int AS total_seconds
+       FROM User_Activity
+       WHERE user_id = $1
+         AND activity_date >= date_trunc('week', CURRENT_DATE)::date
+         AND activity_date <= CURRENT_DATE
+       ON CONFLICT (user_id, week_start)
+       DO UPDATE SET total_seconds = EXCLUDED.total_seconds`,
+      [userId]
+    );
+
+    // If crossing 60 minutes for the first time today, update streak
+    const THRESHOLD = 60 * 60;
+    if (prevSeconds < THRESHOLD && activeSeconds >= THRESHOLD) {
+      const streakRes = await db.query(
+        `SELECT current_streak, last_success_date
+         FROM User_Streak WHERE user_id = $1`,
+        [userId]
+      );
+      let currentStreak = streakRes.rows?.[0]?.current_streak ?? 0;
+      const lastSuccess = streakRes.rows?.[0]?.last_success_date ? new Date(streakRes.rows[0].last_success_date) : null;
+
+      // Compute day diff in server timezone
+      const diffRes = await db.query(`SELECT (CURRENT_DATE - $1::date) AS diff`, [lastSuccess]);
+      const diff = lastSuccess ? Number(diffRes.rows[0].diff) : null;
+
+      let nextStreak = 1;
+      if (lastSuccess === null) {
+        nextStreak = 1;
+      } else if (diff <= 3) {
+        nextStreak = currentStreak + 1;
+      } else {
+        nextStreak = 1; // streak died and restarts
+      }
+
+      await db.query(
+        `UPDATE User_Streak
+         SET current_streak = $1,
+             last_success_date = CURRENT_DATE,
+             updated_at = NOW()
+         WHERE user_id = $2`,
+        [nextStreak, userId]
+      );
+    }
+
+    // Return summary
+    const streakRow = await db.query(`SELECT current_streak FROM User_Streak WHERE user_id = $1`, [userId]);
+    const currentStreak = streakRow.rows?.[0]?.current_streak ?? 0;
+
+    res.json({ success: true, activeSeconds, currentStreak });
+  } catch (err) {
+    console.error('Heartbeat error:', err);
+    res.status(500).json({ error: 'heartbeat_failed' });
+  }
+});
+
+// Weekly stats: Monday to Monday
+app.get('/api/stats/week', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+
+    // Get weekly total from rollup (fast path)
+    const weekRes = await db.query(
+      `SELECT COALESCE(total_seconds, 0) AS total_seconds
+       FROM User_Activity_Weekly
+       WHERE user_id = $1
+         AND week_start = date_trunc('week', CURRENT_DATE)::date`,
+      [userId]
+    );
+    const totalSeconds = weekRes.rows?.[0]?.total_seconds ?? 0;
+
+    // 7-day daily breakdown (Mon..Sun window aligned to current week)
+    const dailyRes = await db.query(
+      `SELECT activity_date::date AS date, COALESCE(active_seconds,0)::int AS seconds
+       FROM User_Activity
+       WHERE user_id = $1
+         AND activity_date >= date_trunc('week', CURRENT_DATE)::date
+         AND activity_date <  date_trunc('week', CURRENT_DATE)::date + INTERVAL '7 days'
+       ORDER BY activity_date`,
+      [userId]
+    );
+
+    res.json({ success: true, totalSeconds, daily: dailyRes.rows || [] });
+  } catch (err) {
+    console.error('Week stats error:', err);
+    res.status(500).json({ error: 'week_stats_failed' });
+  }
+});
+
+// Streak summary with reset if >3 days gap
+app.get('/api/streak', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+
+    const stRes = await db.query(
+      `SELECT current_streak, last_success_date
+       FROM User_Streak WHERE user_id = $1`,
+      [userId]
+    );
+    let currentStreak = stRes.rows?.[0]?.current_streak ?? 0;
+    const lastSuccess = stRes.rows?.[0]?.last_success_date ? new Date(stRes.rows[0].last_success_date) : null;
+
+    if (lastSuccess) {
+      const diffRes = await db.query(`SELECT (CURRENT_DATE - $1::date) AS diff`, [lastSuccess]);
+      const diff = Number(diffRes.rows[0].diff);
+      if (diff > 3 && currentStreak !== 0) {
+        await db.query(
+          `UPDATE User_Streak SET current_streak = 0, updated_at = NOW() WHERE user_id = $1`,
+          [userId]
+        );
+        currentStreak = 0;
+      }
+    }
+
+    const actRes = await db.query(
+      `SELECT COALESCE(active_seconds, 0) AS active_seconds
+       FROM User_Activity
+       WHERE user_id = $1 AND activity_date = CURRENT_DATE`,
+      [userId]
+    );
+    const activeSeconds = actRes.rows?.[0]?.active_seconds ?? 0;
+
+    res.json({ success: true, currentStreak, activeSeconds });
+  } catch (err) {
+    console.error('Get streak error:', err);
+    res.status(500).json({ error: 'streak_fetch_failed' });
+  }
+});
+
+// Get unlocked achievements count
+app.get('/api/achievements/count', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    
+    const result = await db.query(
+      `SELECT COUNT(*) as count
+       FROM achievements
+       WHERE user_id = $1 AND status = true`,
+      [userId]
+    );
+    
+    const count = parseInt(result.rows[0].count) || 0;
+    res.json({ success: true, count });
+  } catch (err) {
+    console.error('Achievements count error:', err);
+    res.status(500).json({ error: 'achievements_count_failed' });
   }
 });
 

@@ -119,13 +119,13 @@
                                 Continue your Korean language journey with today's personalized lessons and challenges.
                             </p>
                         </div>
-                        <div class="flex items-center space-x-4 sm:space-x-6">
+                        <div class="flex items-center space-x-3">
                             <button class="btn-primary custom-text-white px-6 sm:px-8 py-3 sm:py-4 !rounded-button font-semibold whitespace-nowrap text-sm sm:text-base">
                                 Continue Learning
                             </button>
                             <div class="flex items-center space-x-3">
                                 <div class="w-3 h-3 custom-bg-primary rounded-full"></div>
-                                <span class="text-secondary font-medium text-sm sm:text-base">12 day streak</span>
+                                <span id="streakBadgeText" class="text-secondary font-medium text-sm sm:text-base">0 day streak</span>
                             </div>
                         </div>
                     </div>
@@ -143,7 +143,7 @@
                             </svg>
                             <div class="absolute inset-0 flex items-center justify-center">
                                 <div class="text-center">
-                                    <div class="text-3xl font-bold text-secondary">70%</div>
+                                    <div id="todayProgressPct" class="text-3xl font-bold text-secondary">0%</div>
                                     <div class="text-sm text-warm">Today's Goal</div>
                                 </div>
                             </div>
@@ -183,11 +183,11 @@
                                             <div class="text-sm text-warm">Total Points</div>
                                         </div>
                                         <div class="text-center">
-                                            <div class="text-2xl font-bold text-secondary">12</div>
+                                            <div id="streakCount" class="text-2xl font-bold text-secondary">0</div>
                                             <div class="text-sm text-warm">Day Streak</div>
                                         </div>
                                         <div class="text-center">
-                                            <div class="text-2xl font-bold text-secondary">8</div>
+                                            <div id="achievementsCount" class="text-2xl font-bold text-secondary">0</div>
                                             <div class="text-sm text-warm">Achievements</div>
                                         </div>
                                     </div>
@@ -236,14 +236,14 @@
                                         <i class="ri-time-line ri-2x custom-text-primary"></i>
                                     </div>
                                     <div>
-                                        <div class="text-2xl font-bold text-dark">47</div>
+                                        <div id="hoursStudiedValue" class="text-2xl font-bold text-dark">0</div>
                                         <div class="text-sm text-warm">Hours Studied</div>
                                     </div>
                                 </div>
                                 <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div class="progress-bar h-2 rounded-full" style="width: 85%"></div>
+                                    <div id="hoursStudiedBar" class="progress-bar h-2 rounded-full" style="width: 0%"></div>
                                 </div>
-                                <div class="text-xs text-warm mt-2">+5.5 this week</div>
+                                <div id="hoursStudiedDelta" class="text-xs text-warm mt-2">+0 this week</div>
                             </div>
                         </div>
                     </div>
@@ -286,35 +286,22 @@
 
                         <!-- Recent Achievements -->
                         <div class="achievement-card rounded-xl p-6 shadow-sm">
-                            <h3 class="text-lg font-semibold text-dark mb-4">Recent Achievements</h3>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-dark">Achievements</h3>
+                                <button id="openAllAchievements" class="text-sm font-medium custom-text-primary hover:text-secondary">View All</button>
+                            </div>
                             <div class="space-y-3">
+                                <% (achievementsRecent || []).forEach(function(a){ %>
                                 <div class="flex items-center space-x-3">
-                                    <div class="w-10 h-10 flex items-center justify-center bg-yellow-100 rounded-full">
-                                        <i class="ri-trophy-line text-yellow-600"></i>
+                                    <div class="w-10 h-10 flex items-center justify-center rounded-full <%= a.status ? 'bg-green-100' : 'bg-gray-100' %>">
+                                        <i class="<%= a.icon %> <%= a.status ? 'text-green-600' : 'text-gray-500' %>"></i>
                                     </div>
                                     <div>
-                                        <div class="font-medium text-dark">Grammar Master</div>
-                                        <div class="text-sm text-warm">Completed 20 grammar lessons</div>
+                                        <div class="font-medium text-dark"><%= a.title %></div>
+                                        <div class="text-sm text-warm"><%= a.description %></div>
                                     </div>
                                 </div>
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-10 h-10 flex items-center justify-center bg-blue-100 rounded-full">
-                                        <i class="ri-medal-line text-blue-600"></i>
-                                    </div>
-                                    <div>
-                                        <div class="font-medium text-dark">Consistent Learner</div>
-                                        <div class="text-sm text-warm">10 day learning streak</div>
-                                    </div>
-                                </div>
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-10 h-10 flex items-center justify-center bg-green-100 rounded-full">
-                                        <i class="ri-star-line text-green-600"></i>
-                                    </div>
-                                    <div>
-                                        <div class="font-medium text-dark">Vocabulary Builder</div>
-                                        <div class="text-sm text-warm">Learned 100+ new words</div>
-                                    </div>
-                                </div>
+                                <% }) %>
                             </div>
                         </div>
                     </div>
@@ -366,6 +353,34 @@
             </div>
         </section>
     </main>
+
+    <!-- All Achievements Modal -->
+    <div id="achievementsModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden backdrop-blur-sm">
+        <div class="bg-white rounded-2xl w-full max-w-2xl mx-4 p-4 sm:p-6 md:p-8 max-h-[80vh] sm:max-h-[85vh] md:max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between mb-4 sm:mb-6 flex-shrink-0">
+                <h2 class="text-xl sm:text-2xl font-bold text-dark">All Achievements</h2>
+                <button id="closeAchievementsModal" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors">
+                    <i class="ri-close-line text-gray-500"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto min-h-0 space-y-3 pr-1">
+                <% (achievementsAll || []).forEach(function(a){ %>
+                <div class="flex items-start space-x-3 p-3 rounded-lg border border-gray-100">
+                    <div class="w-10 h-10 flex items-center justify-center rounded-full <%= a.status ? 'bg-green-100' : 'bg-gray-100' %>">
+                        <i class="<%= a.icon %> <%= a.status ? 'text-green-600' : 'text-gray-500' %>"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-semibold text-dark"><%= a.title %></div>
+                        <div class="text-sm text-warm"><%= a.description %></div>
+                    </div>
+                    <div>
+                        <span class="text-xs <%= a.status ? 'text-green-600' : 'text-gray-400' %>"><%= a.status ? 'Unlocked' : 'Locked' %></span>
+                    </div>
+                </div>
+                <% }) %>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
 

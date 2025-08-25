@@ -145,17 +145,26 @@
 			<!-- Achievements -->
 			<section class="mb-6 sm:mb-8">
 				<h2 class="text-xl font-semibold text-dark mb-4">Achievements</h2>
+				<% const unlocked = (userAchievements || []).filter(a => a.status); %>
+				<% if (unlocked.length === 0) { %>
+				<div class="text-sm text-warm bg-white rounded-xl p-4 border border-neutral/20">No achievements yet. Keep learning to unlock them!</div>
+				<% } else { %>
 				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-					<% (achievements || []).forEach(function(a){ %>
-					<div class="achievement-card rounded-xl p-4 border <%= a.unlocked ? 'border-primary/40' : 'border-neutral/20' %> bg-white">
-						<div class="flex items-center justify-between mb-2">
-							<div class="font-semibold text-dark"><%= a.title %></div>
-							<i class="ri-award-line <%= a.unlocked ? 'text-primary' : 'text-neutral' %>"></i>
+					<% unlocked.forEach(function(a){ %>
+					<div class="achievement-card rounded-xl p-4 border border-primary/40 bg-white">
+						<div class="flex items-center space-x-3">
+							<div class="w-10 h-10 flex items-center justify-center rounded-full bg-green-100">
+								<i class="<%= a.icon %> text-green-600"></i>
+							</div>
+							<div>
+								<div class="font-semibold text-dark"><%= a.title %></div>
+								<div class="text-sm text-warm"><%= a.description %></div>
+							</div>
 						</div>
-						<div class="text-sm text-warm"><%= a.description %></div>
 					</div>
 					<% }); %>
 				</div>
+				<% } %>
 			</section>
 
 			<!-- Today Lists -->
