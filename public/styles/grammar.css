@@ -138,3 +138,48 @@
 .hover\:custom-text-primary:hover {
     color: #5F8396 !important;
 }
+
+/* Dark mode styles for grammar page */
+[data-theme="dark"] .grammar-table {
+	background-color: var(--card-bg);
+	border-color: var(--border-color);
+}
+
+[data-theme="dark"] .grammar-card {
+	background-color: var(--card-bg);
+	border-color: var(--border-color);
+}
+
+[data-theme="dark"] .grammar-number {
+	background: linear-gradient(135deg, rgba(108, 106, 106, 0.2) 0%, rgba(116, 88, 80, 0.1) 100%);
+	color: var(--primary-text);
+}
+
+[data-theme="dark"] .korean-text {
+	color: var(--primary-text);
+}
+
+[data-theme="dark"] .english-text {
+	color: var(--text-secondary);
+}
+
+[data-theme="dark"] .floating-btn {
+	background: linear-gradient(135deg, var(--primary-bg) 0%, var(--primary-gradient-to) 100%);
+}
+
+[data-theme="dark"] .floating-btn:hover {
+	box-shadow: 0 20px 40px rgba(116, 88, 80, 0.4);
+}
+
+[data-theme="dark"] .floating-btn--above-nav {
+	background: linear-gradient(135deg, var(--primary-bg) 0%, var(--primary-gradient-to) 100%);
+}
+
+[data-theme="dark"] .floating-btn--above-nav:hover {
+	box-shadow: 0 20px 40px rgba(116, 88, 80, 0.4);
+}
+
+[data-theme="dark"] .modal-content {
+	background-color: var(--card-bg);
+	border-color: var(--border-color);
+}

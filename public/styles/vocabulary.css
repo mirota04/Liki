@@ -85,3 +85,57 @@
 
 .modal .modal-content { background: #fff; border-radius: 16px; }
 
+/* Dark mode styles for vocabulary page */
+[data-theme="dark"] .search-container {
+	background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+	border-color: var(--border-color);
+}
+
+[data-theme="dark"] .search-container:focus-within {
+	border-color: var(--primary-bg);
+	box-shadow: 0 0 0 4px rgba(116, 88, 80, 0.1);
+}
+
+[data-theme="dark"] .search-result {
+	background-color: var(--card-bg);
+	border-color: var(--border-color);
+}
+
+[data-theme="dark"] .dictionary-card {
+	background-color: var(--card-bg);
+	border-color: var(--border-color);
+}
+
+[data-theme="dark"] .dictionary-card:hover {
+	box-shadow: 0 8px 25px rgba(116, 88, 80, 0.2);
+}
+
+[data-theme="dark"] .korean-text {
+	color: var(--primary-text);
+}
+
+[data-theme="dark"] .meaning-text {
+	color: var(--text-secondary);
+}
+
+[data-theme="dark"] .floating-btn {
+	background: linear-gradient(135deg, var(--primary-bg) 0%, var(--primary-gradient-to) 100%);
+}
+
+[data-theme="dark"] .floating-btn:hover {
+	box-shadow: 0 20px 40px rgba(116, 88, 80, 0.4);
+}
+
+[data-theme="dark"] .floating-btn--above-nav {
+	background: linear-gradient(135deg, var(--primary-bg) 0%, var(--primary-gradient-to) 100%);
+}
+
+[data-theme="dark"] .floating-btn--above-nav:hover {
+	box-shadow: 0 20px 40px rgba(116, 88, 80, 0.4);
+}
+
+[data-theme="dark"] .modal-content {
+	background-color: var(--card-bg);
+	border-color: var(--border-color);
+}
+

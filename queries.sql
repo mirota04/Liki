@@ -64,6 +64,14 @@ CREATE TABLE User_Streak (
 	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+DROP TABLE IF EXISTS User_Activity_Weekly;
+CREATE TABLE User_Activity_Weekly (
+  user_id INT NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
+  week_start DATE NOT NULL,
+  total_seconds INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, week_start)
+);
+
 -- Helpful indexes
 CREATE INDEX IF NOT EXISTS idx_user_activity_user_date ON User_Activity (user_id, activity_date);
 CREATE INDEX IF NOT EXISTS idx_user_activity_user ON User_Activity (user_id);
