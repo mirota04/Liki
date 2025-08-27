@@ -18,6 +18,7 @@ CREATE TABLE Grammar (
 	Kexample TEXT NOT NULL,
 	Eexample TEXT NOT NULL,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	asked BOOLEAN DEFAULT FALSE,
 	user_id INT, FOREIGN KEY (user_id) REFERENCES Users(id)
 );
 

@@ -149,7 +149,7 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             <% (grammars || []).forEach(function(g){ %>
-                            <tr class="grammar-row">
+                            <tr class="grammar-row cursor-pointer hover:bg-gray-50" data-id="<%= g.id %>" data-title="<%- g.title %>" data-explanation="<%- g.explanation %>" data-kexample="<%- g.kexample %>" data-eexample="<%- g.eexample %>">
                                 <td class="px-6 py-6">
                                     <div class="w-8 h-8 flex items-center justify-center grammar-number rounded-full text-sm"><%= g.id %></div>
                                 </td>
@@ -175,7 +175,7 @@
             <!-- Mobile Grammar Cards -->
             <div class="grammar-cards space-y-3 sm:space-y-4">
                 <% (grammars || []).forEach(function(g){ %>
-                <div class="grammar-card bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+                <div class="grammar-card bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100" data-id="<%= g.id %>" data-title="<%- g.title %>" data-explanation="<%- g.explanation %>" data-kexample="<%- g.kexample %>" data-eexample="<%- g.eexample %>">
                     <div class="flex items-start justify-between mb-3">
                         <div class="w-8 h-8 flex items-center justify-center grammar-number rounded-full text-sm"><%= g.id %></div>
                     </div>
@@ -242,6 +242,42 @@
                         <button type="submit" class="w-full sm:w-auto btn-primary custom-text-white px-4 sm:px-6 py-2 sm:py-3 !rounded-button font-medium whitespace-nowrap">
                             Add Grammar Rule
                         </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Edit Grammar Modal -->
+        <div id="editGrammarModal" class="modal fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+            <div class="modal-content w-full max-w-lg mx-4 p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between mb-4 sm:mb-6">
+                    <h2 class="text-xl sm:text-2xl font-bold text-dark">Edit Grammar Rule</h2>
+                    <button id="editCloseModal" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors">
+                        <i class="ri-close-line text-gray-500"></i>
+                    </button>
+                </div>
+                <form id="editGrammarForm" method="POST" class="space-y-4 sm:space-y-6" autocomplete="off">
+                    <div>
+                        <label class="block text-sm font-medium text-dark mb-2">Korean Grammar Pattern</label>
+                        <input type="text" name="title" class="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-dark mb-2">English Explanation</label>
+                        <textarea name="explanation" class="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary h-20 sm:h-24 resize-none" required></textarea>
+                    </div>
+                    <div class="space-y-4 sm:space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium text-dark mb-2">Korean Example</label>
+                            <input type="text" name="Kexample" class="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-dark mb-2">English Example</label>
+                            <input type="text" name="Eexample" class="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" required>
+                        </div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 pt-4 sm:pt-6">
+                        <button type="button" id="editCancelBtn" class="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors !rounded-button whitespace-nowrap">Cancel</button>
+                        <button type="submit" class="w-full sm:w-auto btn-primary custom-text-white px-4 sm:px-6 py-2 sm:py-3 !rounded-button font-medium whitespace-nowrap">Save Changes</button>
                     </div>
                 </form>
             </div>

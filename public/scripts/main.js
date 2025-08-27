@@ -787,3 +787,118 @@ document.addEventListener('DOMContentLoaded', function(){
 		});
 	}
 });
+
+// Quiz Landing Modal handlers
+(function(){
+	document.addEventListener('DOMContentLoaded', function(){
+		const modal = document.getElementById('quizLandingModal');
+		if (!modal) return;
+		const iconBox = document.getElementById('quizLandingIcon');
+		const titleEl = document.getElementById('quizLandingTitle');
+		const descEl = document.getElementById('quizLandingDesc');
+		const btnStart = document.getElementById('quizLandingStart');
+
+		const modeSelector = document.getElementById('quizModeSelector');
+		const modeWords = document.getElementById('modeWords');
+		const modeGrammar = document.getElementById('modeGrammar');
+		const modeBoth = document.getElementById('modeBoth');
+		let selectedMode = 'both';
+
+		let lastOpenedType = 'general';
+
+		function openModal(fromCard){
+			if (!fromCard) return;
+			const type = fromCard.getAttribute('data-quiz-type') || 'general';
+			lastOpenedType = type;
+			const title = fromCard.getAttribute('data-quiz-title') || 'Start Quiz';
+			const desc = fromCard.getAttribute('data-quiz-desc') || 'Get ready to begin.';
+			const icon = fromCard.getAttribute('data-quiz-icon') || 'ri-question-line';
+
+			if (iconBox) {
+				iconBox.className = 'w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 text-gray-600';
+				iconBox.innerHTML = `<i class="${icon} ri-lg"></i>`;
+			}
+			if (titleEl) titleEl.textContent = title;
+			if (descEl) descEl.textContent = desc;
+
+			// Show mode selector only for general quiz
+			if (modeSelector) {
+				if (type === 'general') {
+					modeSelector.classList.remove('hidden');
+					selectedMode = 'both';
+					setModeButtonStyles('both');
+				} else {
+					modeSelector.classList.add('hidden');
+				}
+			}
+
+			modal.classList.remove('hidden');
+			document.body.style.overflow = 'hidden';
+
+			if (btnStart) {
+				btnStart.onclick = () => {
+					// Navigate based on type
+					if (lastOpenedType === 'grammar') {
+						window.location.href = '/quiz/grammar';
+					} else {
+						// TODO: other quiz routes
+						closeModal();
+					}
+				};
+			}
+		}
+
+		function setModeButtonStyles(mode){
+			function setBtn(btn, active){
+				if (!btn) return;
+				btn.className = active
+					? 'px-3 py-2 rounded-button custom-bg-primary custom-text-white text-sm'
+					: 'px-3 py-2 rounded-button bg-gray-100 text-dark text-sm';
+			}
+			setBtn(modeWords, mode === 'words');
+			setBtn(modeGrammar, mode === 'grammar');
+			setBtn(modeBoth, mode === 'both');
+		}
+
+		if (modeWords) modeWords.addEventListener('click', () => { selectedMode = 'words'; setModeButtonStyles('words'); });
+		if (modeGrammar) modeGrammar.addEventListener('click', () => { selectedMode = 'grammar'; setModeButtonStyles('grammar'); });
+		if (modeBoth) modeBoth.addEventListener('click', () => { selectedMode = 'both'; setModeButtonStyles('both'); });
+
+		function closeModal(){
+			if (!modal) return;
+			modal.classList.add('hidden');
+			document.body.style.overflow = '';
+		}
+
+		// Delegated close handlers to ensure reliability
+		document.addEventListener('click', function(e){
+			const target = e.target;
+			if (!modal) return;
+			// Click on overlay
+			if (target === modal) {
+				closeModal();
+				return;
+			}
+			// Click on explicit close buttons
+			if (target && (target.id === 'quizLandingClose' || target.closest('#quizLandingClose'))){
+				closeModal();
+				return;
+			}
+			if (target && (target.id === 'quizLandingCancel' || target.closest('#quizLandingCancel'))){
+				closeModal();
+				return;
+			}
+		});
+
+		// Escape key closes modal
+		document.addEventListener('keydown', function(e){
+			if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) closeModal();
+		});
+
+		// Bind cards
+		['qaGrammar','qaVocabulary','qaMixed','qaGeneral'].forEach(id => {
+			const el = document.getElementById(id);
+			if (el) el.addEventListener('click', () => openModal(el));
+		});
+	});
+})();

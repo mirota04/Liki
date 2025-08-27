@@ -904,6 +904,66 @@ app.get('/api/stats/content-week', requireAuth, async (req, res) => {
   }
 });
 
+// Render Grammar Quiz
+app.get('/quiz/grammar', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const qRes = await db.query(
+      `SELECT id, title, Eexample
+       FROM Grammar
+       WHERE user_id = $1
+       ORDER BY RANDOM()
+       LIMIT 3`,
+      [userId]
+    );
+    const questions = qRes.rows || [];
+    res.render('GrammarQuiz.ejs', { questions });
+  } catch (err) {
+    console.error('Render grammar quiz error:', err);
+    res.redirect('/home');
+  }
+});
+
+// Stub submission endpoint
+app.post('/quiz/grammar/submit', requireAuth, async (req, res) => {
+  try {
+    const answers = req.body?.answers || {};
+    // TODO: store attempt and evaluate
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Submit grammar quiz error:', err);
+    res.status(500).json({ error: 'submit_failed' });
+  }
+});
+
+// Update grammar rule
+app.put('/grammar/:id', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const id = Number(req.params.id);
+    const { title, explanation, Kexample, Eexample } = req.body || {};
+    if (!id || !title || !explanation || !Kexample || !Eexample) {
+      return res.status(400).json({ error: 'invalid_payload' });
+    }
+    const result = await db.query(
+      `UPDATE Grammar
+       SET title = $1,
+           explanation = $2,
+           Kexample = $3,
+           Eexample = $4
+       WHERE id = $5 AND user_id = $6`,
+      [title, explanation, Kexample, Eexample, id, userId]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'not_found' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Update grammar error:', err);
+    res.status(500).json({ error: 'update_failed' });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

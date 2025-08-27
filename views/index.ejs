@@ -367,40 +367,35 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6">
                 <div class="flex items-center justify-between mb-8">
                     <h2 class="text-2xl sm:text-3xl font-bold text-dark">Quick Access</h2>
-                    <button class="custom-text-primary hover:text-secondary transition-colors font-medium text-sm sm:text-base">View All</button>
                 </div>
                 <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="bg-gradient-to-br from-neutral/5 to-warm/10 rounded-xl p-6 card-hover cursor-pointer border border-neutral/20">
+                    <div id="qaGrammar" class="bg-gradient-to-br from-neutral/5 to-warm/10 rounded-xl p-6 card-hover cursor-pointer border border-neutral/20" data-quiz-type="grammar" data-quiz-title="Today's Grammar" data-quiz-desc="Continue where you left off" data-quiz-icon="ri-book-2-line">
                         <div class="w-12 h-12 flex items-center justify-center custom-bg-primary custom-text-white rounded-xl mb-4">
                             <i class="ri-book-2-line ri-2x"></i>
                         </div>
-                        <h3 class="font-semibold text-dark mb-2">Recent Lessons</h3>
+                        <h3 class="font-semibold text-dark mb-2">Today's Grammar</h3>
                         <p class="text-sm text-warm mb-4">Continue where you left off</p>
-                        <div class="text-xs custom-text-primary font-medium">3 lessons pending</div>
                     </div>
-                    <div class="bg-gradient-to-br from-primary/5 to-secondary/10 rounded-xl p-6 card-hover cursor-pointer border border-primary/20">
+                    <div id="qaVocabulary" class="bg-gradient-to-br from-primary/5 to-secondary/10 rounded-xl p-6 card-hover cursor-pointer border border-primary/20" data-quiz-type="vocabulary" data-quiz-title="Recent Vocabulary" data-quiz-desc="Let's check last 3 days" data-quiz-icon="ri-bookmark-line">
                         <div class="w-12 h-12 flex items-center justify-center bg-secondary text-white rounded-xl mb-4">
                             <i class="ri-bookmark-line ri-2x"></i>
                         </div>
-                        <h3 class="font-semibold text-dark mb-2">Bookmarks</h3>
-                        <p class="text-sm text-warm mb-4">Your saved content</p>
-                        <div class="text-xs text-secondary font-medium">12 items saved</div>
+                        <h3 class="font-semibold text-dark mb-2">Recent Vocabulary</h3>
+                        <p class="text-sm text-warm mb-4">Let's check last 3 days</p>
                     </div>
-                    <div class="bg-gradient-to-br from-neutral/5 to-warm/10 rounded-xl p-6 card-hover cursor-pointer border border-neutral/20">
+                    <div id="qaMixed" class="bg-gradient-to-br from-neutral/5 to-warm/10 rounded-xl p-6 card-hover cursor-pointer border border-neutral/20" data-quiz-type="mixed" data-quiz-title="1/1/1" data-quiz-desc="Do you remember?" data-quiz-icon="ri-lightbulb-line">
                         <div class="w-12 h-12 flex items-center justify-center custom-bg-primary custom-text-white rounded-xl mb-4">
                             <i class="ri-lightbulb-line ri-2x"></i>
                         </div>
-                        <h3 class="font-semibold text-dark mb-2">Recommendations</h3>
-                        <p class="text-sm text-warm mb-4">Personalized for you</p>
-                        <div class="text-xs custom-text-primary font-medium">5 new suggestions</div>
+                        <h3 class="font-semibold text-dark mb-2">1/1/1</h3>
+                        <p class="text-sm text-warm mb-4">Do you remember?</p>
                     </div>
-                    <div class="bg-gradient-to-br from-primary/5 to-secondary/10 rounded-xl p-6 card-hover cursor-pointer border border-primary/20">
+                    <div id="qaGeneral" class="bg-gradient-to-br from-primary/5 to-secondary/10 rounded-xl p-6 card-hover cursor-pointer border border-primary/20" data-quiz-type="general" data-quiz-title="General" data-quiz-desc="Are you ready?" data-quiz-icon="ri-group-line">
                         <div class="w-12 h-12 flex items-center justify-center bg-secondary text-white rounded-xl mb-4">
                             <i class="ri-group-line ri-xl"></i>
                         </div>
-                        <h3 class="font-semibold text-dark mb-2">Study Groups</h3>
-                        <p class="text-sm text-warm mb-4">Learn with others</p>
-                        <div class="text-xs text-secondary font-medium">2 active groups</div>
+                        <h3 class="font-semibold text-dark mb-2">General</h3>
+                        <p class="text-sm text-warm mb-4">Are you ready?</p>
                     </div>
                 </div>
             </div>
@@ -431,6 +426,42 @@
                     </div>
                 </div>
                 <% }) %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quiz Landing Modal -->
+    <div id="quizLandingModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden backdrop-blur-sm">
+        <div class="bg-white rounded-2xl w-full max-w-lg mx-4 p-6 sm:p-8 overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                    <div id="quizLandingIcon" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 text-gray-500">
+                        <i class="ri-question-line ri-lg"></i>
+                    </div>
+                    <div>
+                        <h2 id="quizLandingTitle" class="text-xl font-bold text-dark">Start Quiz</h2>
+                        <p id="quizLandingDesc" class="text-sm text-warm">Get ready to begin.</p>
+                    </div>
+                </div>
+                <button id="quizLandingClose" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors">
+                    <i class="ri-close-line text-gray-500"></i>
+                </button>
+            </div>
+            <div class="mt-2 text-sm text-warm">
+                <p>Answer questions to test your knowledge. Your progress counts towards daily challenges.</p>
+            </div>
+            <!-- General quiz mode selector -->
+            <div id="quizModeSelector" class="mt-4 hidden">
+                <div class="text-sm font-medium text-dark mb-2">Choose focus</div>
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="modeWords" class="px-3 py-2 rounded-button bg-gray-100 text-dark text-sm">Words</button>
+                    <button id="modeGrammar" class="px-3 py-2 rounded-button bg-gray-100 text-dark text-sm">Grammar</button>
+                    <button id="modeBoth" class="px-3 py-2 rounded-button custom-bg-primary custom-text-white text-sm">Both</button>
+                </div>
+            </div>
+            <div class="mt-6 flex items-center justify-end space-x-3">
+                <button id="quizLandingCancel" class="px-4 py-2 rounded-button text-sm text-dark hover:bg-gray-100">Cancel</button>
+                <button id="quizLandingStart" class="btn-primary custom-text-white px-5 py-2.5 !rounded-button font-semibold text-sm">Start Quiz</button>
             </div>
         </div>
     </div>

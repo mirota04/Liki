@@ -22,6 +22,79 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.classList.add('hidden');
         }
     });
+
+    // Edit modal wiring
+    const editModal = document.getElementById('editGrammarModal');
+    const editClose = document.getElementById('editCloseModal');
+    const editCancel = document.getElementById('editCancelBtn');
+    const editForm = document.getElementById('editGrammarForm');
+    let editingId = null;
+
+    function openEdit(fromEl){
+        if (!editModal) return;
+        editingId = fromEl.getAttribute('data-id');
+        const title = fromEl.getAttribute('data-title') || '';
+        const explanation = fromEl.getAttribute('data-explanation') || '';
+        const kex = fromEl.getAttribute('data-kexample') || '';
+        const eex = fromEl.getAttribute('data-eexample') || '';
+
+        if (editForm) {
+            editForm.title.value = title;
+            editForm.explanation.value = explanation;
+            editForm.Kexample.value = kex;
+            editForm.Eexample.value = eex;
+        }
+        editModal.classList.remove('hidden');
+    }
+
+    function closeEdit(){
+        if (!editModal) return;
+        editModal.classList.add('hidden');
+        editingId = null;
+    }
+
+    // Bind table rows and mobile cards to open edit on double click
+    document.querySelectorAll('.grammar-row').forEach(row => {
+        row.addEventListener('dblclick', () => openEdit(row));
+    });
+    document.querySelectorAll('.grammar-card').forEach(card => {
+        card.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            openEdit(card);
+        });
+    });
+
+    if (editClose) editClose.addEventListener('click', closeEdit);
+    if (editCancel) editCancel.addEventListener('click', closeEdit);
+    if (editModal) editModal.addEventListener('click', (e) => { if (e.target === editModal) closeEdit(); });
+
+    if (editForm) {
+        editForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!editingId) return;
+            const payload = {
+                id: editingId,
+                title: editForm.title.value.trim(),
+                explanation: editForm.explanation.value.trim(),
+                Kexample: editForm.Kexample.value.trim(),
+                Eexample: editForm.Eexample.value.trim()
+            };
+            try {
+                const res = await fetch('/grammar/' + editingId, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Failed to update grammar');
+                }
+            } catch (err) {
+                alert('Network error');
+            }
+        });
+    }
 });
 
 // Filter functionality
