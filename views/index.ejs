@@ -120,8 +120,8 @@
                             </p>
                         </div>
                         <div class="flex items-center space-x-3">
-                            <button class="btn-primary custom-text-white px-6 sm:px-8 py-3 sm:py-4 !rounded-button font-semibold whitespace-nowrap text-sm sm:text-base">
-                                Continue Learning
+                            <button id="takeQuizzesBtn" class="btn-primary custom-text-white px-6 sm:px-8 py-3 sm:py-4 !rounded-button font-semibold whitespace-nowrap text-sm sm:text-base">
+                                Take Today's Quizzes
                             </button>
                             <div class="flex items-center space-x-3">
                                 <div class="w-3 h-3 custom-bg-primary rounded-full"></div>
@@ -133,7 +133,8 @@
                         <div class="relative">
                             <svg class="w-48 h-48 progress-ring" viewBox="0 0 100 100">
                                 <circle cx="50" cy="50" r="40" stroke="#E5E7EB" stroke-width="8" fill="none"></circle>
-                                <circle cx="50" cy="50" r="40" stroke="url(#progressGradient)" stroke-width="8" fill="none" class="progress-ring-circle"></circle>
+                                <circle cx="50" cy="50" r="40" stroke="url(#progressGradient)" stroke-width="8" fill="none" class="progress-ring-circle" 
+                                    data-initial-progress="<%= dailyChallenges ? dailyChallenges.dailyProgressPercent : 0 %>"></circle>
                                 <defs>
                                     <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                                         <stop offset="0%" style="stop-color:#5F8396"></stop>
@@ -143,7 +144,7 @@
                             </svg>
                             <div class="absolute inset-0 flex items-center justify-center">
                                 <div class="text-center">
-                                    <div id="todayProgressPct" class="text-3xl font-bold text-secondary">0%</div>
+                                    <div id="todayProgressPct" class="text-3xl font-bold text-secondary"><%= dailyChallenges ? dailyChallenges.dailyProgressPercent : 0 %>%</div>
                                     <div class="text-sm text-warm">Today's Goal</div>
                                 </div>
                             </div>
@@ -162,38 +163,90 @@
                         <!-- Daily Quiz Challenge -->
                         <div class="bg-white/50 backdrop-blur-sm rounded-2xl p-6 sm:p-8 shadow-sm border border-neutral/20 card-hover">
                             <div class="flex items-center justify-between mb-6">
-                                <h2 class="text-2xl font-bold text-dark">Daily Quiz Challenge</h2>
+                                <h2 class="text-2xl font-bold text-dark">Daily Challenges</h2>
                                 <div class="flex items-center space-x-2 custom-text-primary">
                                     <i class="ri-fire-line ri-lg"></i>
-                                    <span class="font-semibold">+50 XP</span>
+                                    <span class="font-semibold">6/6 Complete</span>
                                 </div>
                             </div>
                             <div class="space-y-6">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-warm text-sm sm:text-base">Progress: 3/5 questions</span>
-                                    <span class="text-secondary font-semibold text-sm sm:text-base">60% Complete</span>
+                                <!-- Challenge Progress Bar -->
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-warm text-sm sm:text-base">Daily Progress</span>
+                                        <span id="dailyProgressText" class="text-secondary font-semibold text-sm sm:text-base">0% Complete</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5 sm:h-3">
+                                        <div id="dailyProgressBar" class="progress-bar h-2.5 sm:h-3 rounded-full" style="width: 0%"></div>
+                                    </div>
                                 </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2.5 sm:h-3">
-                                    <div class="progress-bar h-2.5 sm:h-3 rounded-full" style="width: 60%"></div>
-                                </div>
-                                <div class="flex flex-wrap items-center justify-between gap-3 pt-4">
-                                    <div class="flex items-center space-x-4 sm:space-x-6">
-                                        <div class="text-center">
-                                            <div class="text-2xl font-bold text-secondary">1,247</div>
-                                            <div class="text-sm text-warm">Total Points</div>
-                                        </div>
-                                        <div class="text-center">
-                                            <div id="streakCount" class="text-2xl font-bold text-secondary">0</div>
-                                            <div class="text-sm text-warm">Day Streak</div>
-                                        </div>
-                                        <div class="text-center">
-                                            <div id="achievementsCount" class="text-2xl font-bold text-secondary">0</div>
-                                            <div class="text-sm text-warm">Achievements</div>
+                                
+                                <!-- Individual Challenges -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- Quiz Challenges -->
+                                    <div class="space-y-3">
+                                        <h3 class="font-semibold text-dark text-sm">Quiz Challenges</h3>
+                                        <div class="space-y-2">
+                                            <div class="flex items-center space-x-3">
+                                                <div id="grammarQuizIcon" class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100">
+                                                    <i class="ri-close-line text-gray-400 text-sm"></i>
+                                                </div>
+                                                <span class="text-sm text-warm">Take Daily Grammar Quiz</span>
+                                            </div>
+                                            <div class="flex items-center space-x-3">
+                                                <div id="vocabQuizIcon" class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100">
+                                                    <i class="ri-close-line text-gray-400 text-sm"></i>
+                                                </div>
+                                                <span class="text-sm text-warm">Take Daily Vocabulary Quiz</span>
+                                            </div>
+                                            <div class="flex items-center space-x-3">
+                                                <div id="mixedQuizIcon" class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100">
+                                                    <i class="ri-close-line text-gray-400 text-sm"></i>
+                                                </div>
+                                                <span class="text-sm text-warm">Take Mixed Quiz (1/1/1)</span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <button class="btn-primary custom-text-white px-5 sm:px-6 py-2.5 sm:py-3 !rounded-button font-semibold whitespace-nowrap text-sm sm:text-base self-start">
-                                        Continue Quiz
-                                    </button>
+                                    
+                                    <!-- Activity Challenges -->
+                                    <div class="space-y-3">
+                                        <h3 class="font-semibold text-dark text-sm">Activity Challenges</h3>
+                                        <div class="space-y-2">
+                                            <div class="flex items-center space-x-3">
+                                                <div id="grammarActivityIcon" class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100">
+                                                    <i class="ri-close-line text-gray-400 text-sm"></i>
+                                                </div>
+                                                <span class="text-sm text-warm">Add 3 Grammar Rules</span>
+                                                <span id="grammarActivityProgress" class="text-xs text-secondary ml-auto">0/3</span>
+                                            </div>
+                                            <div class="flex items-center space-x-3">
+                                                <div id="vocabActivityIcon" class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100">
+                                                    <i class="ri-close-line text-gray-400 text-sm"></i>
+                                                </div>
+                                                <span class="text-sm text-warm">Add 20 Words</span>
+                                                <span id="vocabActivityProgress" class="text-xs text-secondary ml-auto">0/20</span>
+                                            </div>
+                                            <div class="flex items-center space-x-3">
+                                                <div id="timeActivityIcon" class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100">
+                                                    <i class="ri-close-line text-gray-400 text-sm"></i>
+                                                </div>
+                                                <span class="text-sm text-warm">Spend 2 Hours</span>
+                                                <span id="timeActivityProgress" class="text-xs text-secondary ml-auto">0h/2h</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Stats Row -->
+                                <div class="flex items-center justify-center gap-6 pt-4">
+                                    <div class="text-center">
+                                        <div id="streakCount" class="text-2xl font-bold text-secondary">0</div>
+                                        <div class="text-sm text-warm">Day Streak</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div id="achievementsCount" class="text-2xl font-bold text-secondary">0</div>
+                                        <div class="text-sm text-warm">Achievements</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -206,14 +259,14 @@
                                         <i class="ri-book-open-line ri-2x custom-text-primary"></i>
                                     </div>
                                     <div>
-                                        <div class="text-2xl font-bold text-dark">156</div>
+                                        <div id="wordsLearnedValue" class="text-2xl font-bold text-dark">0</div>
                                         <div class="text-sm text-warm">Words Learned</div>
                                     </div>
                                 </div>
                                 <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div class="progress-bar h-2 rounded-full" style="width: 78%"></div>
+                                    <div id="wordsLearnedBar" class="progress-bar h-2 rounded-full" style="width: 0%"></div>
                                 </div>
-                                <div class="text-xs text-warm mt-2">+12 this week</div>
+                                <div id="wordsLearnedDelta" class="text-xs text-warm mt-2">+0 today</div>
                             </div>
                             <div class="stat-card rounded-xl p-6 shadow-sm card-hover">
                                 <div class="flex items-center space-x-4 mb-4">
@@ -221,14 +274,14 @@
                                         <i class="ri-chat-3-line ri-2x text-secondary"></i>
                                     </div>
                                     <div>
-                                        <div class="text-2xl font-bold text-dark">23</div>
+                                        <div id="grammarLearnedValue" class="text-2xl font-bold text-dark">0</div>
                                         <div class="text-sm text-warm">Grammar Rules</div>
                                     </div>
                                 </div>
                                 <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div class="progress-bar h-2 rounded-full" style="width: 65%"></div>
+                                    <div id="grammarLearnedBar" class="progress-bar h-2 rounded-full" style="width: 0%"></div>
                                 </div>
-                                <div class="text-xs text-warm mt-2">+3 this week</div>
+                                <div id="grammarLearnedDelta" class="text-xs text-warm mt-2">+0 today</div>
                             </div>
                             <div class="stat-card rounded-xl p-6 shadow-sm card-hover">
                                 <div class="flex items-center space-x-4 mb-4">
@@ -255,30 +308,30 @@
                             <h3 class="text-lg font-semibold text-dark mb-4">Today's Focus</h3>
                             <div class="space-y-4">
                                 <div class="flex items-center space-x-3 p-3 bg-primary/5 rounded-lg">
-                                                                    <div class="w-8 h-8 flex items-center justify-center custom-bg-primary custom-text-white rounded-full">
-                                    <i class="ri-check-line"></i>
-                                </div>
-                                    <div>
-                                        <div class="font-medium text-dark">Verb Conjugation</div>
-                                        <div class="text-sm text-warm">Present tense forms</div>
-                                    </div>
-                                </div>
-                                <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                                    <div class="w-8 h-8 flex items-center justify-center bg-gray-300 text-white rounded-full">
-                                        <i class="ri-play-line"></i>
+                                    <div id="focusGrammarIcon" class="w-8 h-8 flex items-center justify-center bg-gray-300 text-white rounded-full">
+                                        <i class="ri-close-line"></i>
                                     </div>
                                     <div>
-                                        <div class="font-medium text-dark">Pronunciation</div>
-                                        <div class="text-sm text-warm">Double consonants</div>
+                                        <div class="font-medium text-dark">Grammar</div>
+                                        <div class="text-sm text-warm">Add 3 rules + daily quiz</div>
                                     </div>
                                 </div>
                                 <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                                    <div class="w-8 h-8 flex items-center justify-center bg-gray-300 text-white rounded-full">
-                                        <i class="ri-play-line"></i>
+                                    <div id="focusVocabularyIcon" class="w-8 h-8 flex items-center justify-center bg-gray-300 text-white rounded-full">
+                                        <i class="ri-close-line"></i>
                                     </div>
                                     <div>
-                                        <div class="font-medium text-dark">Listening Practice</div>
-                                        <div class="text-sm text-warm">Daily conversations</div>
+                                        <div class="font-medium text-dark">Vocabulary</div>
+                                        <div class="text-sm text-warm">Add 20 words + daily quiz</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                    <div id="focusGeneralIcon" class="w-8 h-8 flex items-center justify-center bg-gray-300 text-white rounded-full">
+                                        <i class="ri-close-line"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-dark">General</div>
+                                        <div class="text-sm text-warm">Complete general quiz</div>
                                     </div>
                                 </div>
                             </div>
@@ -310,7 +363,7 @@
         </section>
 
         <!-- Quick Access Section -->
-        <section class="py-10 sm:py-16 bg-white">
+        <section id="quickAccess" class="py-10 sm:py-16 bg-white">
             <div class="max-w-7xl mx-auto px-4 sm:px-6">
                 <div class="flex items-center justify-between mb-8">
                     <h2 class="text-2xl sm:text-3xl font-bold text-dark">Quick Access</h2>

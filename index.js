@@ -58,6 +58,7 @@ app.get("/home", async (req, res) => {
 
     let achievementsRecent = [];
     let achievementsAll = [];
+    let dailyChallenges = null;
 
     if (userId) {
       const recentQuery = `
@@ -112,11 +113,104 @@ app.get("/home", async (req, res) => {
         achievementsRecent = tplRecent.rows || [];
         achievementsAll = tplAll.rows || [];
       }
+
+      // Fetch daily challenges data for immediate progress wheel display
+      try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const grammarRes = await db.query(
+          `SELECT COUNT(*)::int AS count
+           FROM Grammar
+           WHERE user_id = $1 AND created_at::date = CURRENT_DATE`,
+          [userId]
+        );
+
+        const vocabRes = await db.query(
+          `SELECT COUNT(*)::int AS count
+           FROM Dictionary
+           WHERE user_id = $1 AND created_at::date = CURRENT_DATE`,
+          [userId]
+        );
+
+        const timeRes = await db.query(
+          `SELECT COALESCE(active_seconds, 0) AS active_seconds
+           FROM User_Activity
+           WHERE user_id = $1 AND activity_date = CURRENT_DATE`,
+          [userId]
+        );
+
+        const grammarToday = grammarRes.rows?.[0]?.count ?? 0;
+        const vocabToday = vocabRes.rows?.[0]?.count ?? 0;
+        const activeSeconds = timeRes.rows?.[0]?.active_seconds ?? 0;
+        const activeHours = activeSeconds / 3600;
+
+        // For now, quiz completion is simulated (you can implement actual quiz tracking later)
+        const grammarQuizTaken = false;
+        const vocabQuizTaken = false;
+        const mixedQuizTaken = false;
+
+        // Calculate daily progress (6 challenges total)
+        let completedChallenges = 0;
+        if (grammarQuizTaken) completedChallenges++;
+        if (vocabQuizTaken) completedChallenges++;
+        if (mixedQuizTaken) completedChallenges++;
+        if (grammarToday >= 3) completedChallenges++;
+        if (vocabToday >= 20) completedChallenges++;
+        if (activeHours >= 2) completedChallenges++;
+
+        const dailyProgressPercent = Math.round((completedChallenges / 6) * 100);
+
+        dailyChallenges = {
+          grammarQuizTaken,
+          vocabQuizTaken,
+          mixedQuizTaken,
+          grammarToday,
+          vocabToday,
+          activeHours,
+          completedChallenges,
+          totalChallenges: 6,
+          dailyProgressPercent
+        };
+      } catch (challengeErr) {
+        console.error('Error fetching daily challenges for initial render:', challengeErr);
+        dailyChallenges = {
+          grammarQuizTaken: false,
+          vocabQuizTaken: false,
+          mixedQuizTaken: false,
+          grammarToday: 0,
+          vocabToday: 0,
+          activeHours: 0,
+          completedChallenges: 0,
+          totalChallenges: 6,
+          dailyProgressPercent: 0
+        };
+      }
     }
 
-    res.render("index.ejs", { username: displayName, achievementsRecent, achievementsAll });
+    res.render("index.ejs", { 
+      username: displayName, 
+      achievementsRecent, 
+      achievementsAll,
+      dailyChallenges
+    });
   } catch (e) {
-    res.render("index.ejs", { username: null, achievementsRecent: [], achievementsAll: [] });
+    res.render("index.ejs", { 
+      username: null, 
+      achievementsRecent: [], 
+      achievementsAll: [],
+      dailyChallenges: {
+        grammarQuizTaken: false,
+        vocabQuizTaken: false,
+        mixedQuizTaken: false,
+        grammarToday: 0,
+        vocabToday: 0,
+        activeHours: 0,
+        completedChallenges: 0,
+        totalChallenges: 6,
+        dailyProgressPercent: 0
+      }
+    });
   }
 });
 
@@ -697,6 +791,116 @@ app.get('/api/achievements/count', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Achievements count error:', err);
     res.status(500).json({ error: 'achievements_count_failed' });
+  }
+});
+
+// Daily challenges progress
+app.get('/api/daily-challenges', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get today's grammar count
+    const grammarRes = await db.query(
+      `SELECT COUNT(*)::int AS count
+       FROM Grammar
+       WHERE user_id = $1 AND created_at::date = CURRENT_DATE`,
+      [userId]
+    );
+
+    // Get today's vocabulary count
+    const vocabRes = await db.query(
+      `SELECT COUNT(*)::int AS count
+       FROM Dictionary
+       WHERE user_id = $1 AND created_at::date = CURRENT_DATE`,
+      [userId]
+    );
+
+    // Get today's active time
+    const timeRes = await db.query(
+      `SELECT COALESCE(active_seconds, 0) AS active_seconds
+       FROM User_Activity
+       WHERE user_id = $1 AND activity_date = CURRENT_DATE`,
+      [userId]
+    );
+
+    const grammarToday = grammarRes.rows?.[0]?.count ?? 0;
+    const vocabToday = vocabRes.rows?.[0]?.count ?? 0;
+    const activeSeconds = timeRes.rows?.[0]?.active_seconds ?? 0;
+    const activeHours = activeSeconds / 3600;
+
+    // Quiz completion (placeholders until quiz tracking is implemented)
+    const grammarQuizCount = 0; // TODO: replace with real count
+    const vocabQuizCount = 0;   // TODO: replace with real count
+    const mixedQuizCount = 0;   // TODO: replace with real count
+
+    const grammarQuizTaken = grammarQuizCount > 0;
+    const vocabQuizTaken = vocabQuizCount > 0;
+    const mixedQuizTaken = mixedQuizCount > 0;
+
+    // Calculate daily progress (6 challenges total)
+    let completedChallenges = 0;
+    if (grammarQuizTaken) completedChallenges++;
+    if (vocabQuizTaken) completedChallenges++;
+    if (mixedQuizTaken) completedChallenges++;
+    if (grammarToday >= 3) completedChallenges++;
+    if (vocabToday >= 20) completedChallenges++;
+    if (activeHours >= 2) completedChallenges++;
+
+    const dailyProgressPercent = Math.round((completedChallenges / 6) * 100);
+
+    res.json({
+      success: true,
+      grammarQuizTaken,
+      vocabQuizTaken,
+      mixedQuizTaken,
+      grammarQuizCount,
+      vocabQuizCount,
+      mixedQuizCount,
+      grammarToday,
+      vocabToday,
+      activeHours,
+      completedChallenges,
+      totalChallenges: 6,
+      dailyProgressPercent
+    });
+  } catch (err) {
+    console.error('Daily challenges error:', err);
+    res.status(500).json({ error: 'daily_challenges_failed' });
+  }
+});
+
+// Weekly content stats (Grammar and Vocabulary) Monday..Sunday
+app.get('/api/stats/content-week', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+
+    const grammarRes = await db.query(
+      `SELECT COUNT(*)::int AS count
+       FROM Grammar
+       WHERE user_id = $1
+         AND created_at >= date_trunc('week', CURRENT_DATE)::date
+         AND created_at <  date_trunc('week', CURRENT_DATE)::date + INTERVAL '7 days'`,
+      [userId]
+    );
+
+    const vocabRes = await db.query(
+      `SELECT COUNT(*)::int AS count
+       FROM Dictionary
+       WHERE user_id = $1
+         AND created_at >= date_trunc('week', CURRENT_DATE)::date
+         AND created_at <  date_trunc('week', CURRENT_DATE)::date + INTERVAL '7 days'`,
+      [userId]
+    );
+
+    const grammarWeekTotal = grammarRes.rows?.[0]?.count ?? 0;
+    const vocabWeekTotal = vocabRes.rows?.[0]?.count ?? 0;
+
+    res.json({ success: true, grammarWeekTotal, vocabWeekTotal });
+  } catch (err) {
+    console.error('Content week stats error:', err);
+    res.status(500).json({ error: 'content_week_stats_failed' });
   }
 });
 

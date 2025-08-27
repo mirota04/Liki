@@ -123,15 +123,27 @@ document.addEventListener('DOMContentLoaded', function() {
 	// Initialize dark mode
 	initDarkMode();
 	
+	// Set initial progress wheel state based on server-side data - IMMEDIATELY
 	const progressCircle = document.querySelector('.progress-ring-circle');
-    if (progressCircle) {
-        const progressValue = 70;
-        const circumference = 2 * Math.PI * 40;
-        const offset = circumference - (progressValue / 100) * circumference;
-        setTimeout(() => {
-            progressCircle.style.strokeDashoffset = offset;
-        }, 500);
-    }
+	const todayProgressPct = document.getElementById('todayProgressPct');
+	
+	if (progressCircle && todayProgressPct) {
+		// Get initial progress from data attribute (server-side calculated)
+		const initialProgress = parseInt(progressCircle.getAttribute('data-initial-progress')) || 0;
+		const circumference = 2 * Math.PI * 40;
+		const offset = circumference - (initialProgress / 100) * circumference;
+		
+		// Set initial stroke state IMMEDIATELY - no delay
+		progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+		progressCircle.style.strokeDashoffset = offset;
+		
+		// Also update the text if it doesn't match
+		if (todayProgressPct.textContent !== `${initialProgress}%`) {
+			todayProgressPct.textContent = `${initialProgress}%`;
+		}
+	}
+	
+	// Remove legacy progress animation since we're setting it immediately now
 });
 
 // Achievements modal open/close handlers (home page)
@@ -563,9 +575,10 @@ window.addEventListener('click', (event) => {
 
     async function refreshWeeklyUI(){
         try {
-            const [weekRes, todayRes] = await Promise.all([
+            const [weekRes, todayRes, contentWeekRes] = await Promise.all([
                 fetch('/api/stats/week'),
-                fetch('/api/streak')
+                fetch('/api/streak'),
+                fetch('/api/stats/content-week')
             ]);
             if (!weekRes.ok) return;
             const weekData = await weekRes.json();
@@ -595,6 +608,47 @@ window.addEventListener('click', (event) => {
                     deltaEl.textContent = `+${parts.join(' ')} today`;
                 }
             }
+
+            // Words/Grammar learned this week (Mon..Sun)
+            if (contentWeekRes && contentWeekRes.ok) {
+                const contentData = await contentWeekRes.json();
+                const grammarWeek = contentData.grammarWeekTotal ?? 0;
+                const vocabWeek = contentData.vocabWeekTotal ?? 0;
+
+                const wordsValEl = document.getElementById('wordsLearnedValue');
+                const wordsBarEl = document.getElementById('wordsLearnedBar');
+                const wordsDeltaEl = document.getElementById('wordsLearnedDelta');
+                const grammarValEl = document.getElementById('grammarLearnedValue');
+                const grammarBarEl = document.getElementById('grammarLearnedBar');
+                const grammarDeltaEl = document.getElementById('grammarLearnedDelta');
+
+                if (wordsValEl) wordsValEl.textContent = String(vocabWeek);
+                if (grammarValEl) grammarValEl.textContent = String(grammarWeek);
+
+                const WORDS_GOAL = 100; // max for bar
+                const GRAMMAR_GOAL = 12; // max for bar
+                const wordsPct = Math.min(100, Math.round((vocabWeek / WORDS_GOAL) * 100));
+                const grammarPct = Math.min(100, Math.round((grammarWeek / GRAMMAR_GOAL) * 100));
+                if (wordsBarEl) wordsBarEl.style.width = `${wordsPct}%`;
+                if (grammarBarEl) grammarBarEl.style.width = `${grammarPct}%`;
+                
+                // Get today's counts for the delta text
+                try {
+                    const todayRes = await fetch('/api/daily-challenges');
+                    if (todayRes.ok) {
+                        const todayData = await todayRes.json();
+                        const grammarToday = todayData.grammarToday ?? 0;
+                        const vocabToday = todayData.vocabToday ?? 0;
+                        
+                        if (wordsDeltaEl) wordsDeltaEl.textContent = `+${vocabToday} today`;
+                        if (grammarDeltaEl) grammarDeltaEl.textContent = `+${grammarToday} today`;
+                    }
+                } catch (e) {
+                    // Fallback to weekly totals if today's data fails
+                    if (wordsDeltaEl) wordsDeltaEl.textContent = `+${vocabWeek} this week`;
+                    if (grammarDeltaEl) grammarDeltaEl.textContent = `+${grammarWeek} this week`;
+                }
+            }
         } catch (e) {}
     }
 
@@ -603,3 +657,133 @@ window.addEventListener('click', (event) => {
         setInterval(refreshWeeklyUI, 60000);
     });
 })();
+
+// Daily challenges UI (Home)
+(function(){
+    function updateChallengeIcon(iconId, completed) {
+        const icon = document.getElementById(iconId);
+        if (icon) {
+            if (completed) {
+                icon.className = 'w-6 h-6 flex items-center justify-center rounded-full bg-green-100';
+                icon.innerHTML = '<i class="ri-check-line text-green-600 text-sm"></i>';
+            } else {
+                icon.className = 'w-6 h-6 flex items-center justify-center rounded-full bg-gray-100';
+                icon.innerHTML = '<i class="ri-close-line text-gray-400 text-sm"></i>';
+            }
+        }
+    }
+
+    function updateProgressText(progressId, current, target, unit = '') {
+        const progressEl = document.getElementById(progressId);
+        if (progressEl) {
+            progressEl.textContent = `${current}${unit}/${target}${unit}`;
+        }
+    }
+
+    async function refreshDailyChallenges(){
+        try {
+            const res = await fetch('/api/daily-challenges');
+            if (!res.ok) return;
+            const data = await res.json();
+            
+            const {
+                grammarQuizTaken,
+                vocabQuizTaken,
+                mixedQuizTaken,
+                grammarQuizCount,
+                vocabQuizCount,
+                mixedQuizCount,
+                grammarToday,
+                vocabToday,
+                activeHours,
+                completedChallenges,
+                totalChallenges,
+                dailyProgressPercent
+            } = data;
+
+            // Update progress bar and text
+            const progressBar = document.getElementById('dailyProgressBar');
+            const progressText = document.getElementById('dailyProgressText');
+            const completeText = document.querySelector('.custom-text-primary span');
+            
+            if (progressBar) progressBar.style.width = `${dailyProgressPercent}%`;
+            if (progressText) progressText.textContent = `${dailyProgressPercent}% Complete`;
+            if (completeText) completeText.textContent = `${completedChallenges}/${totalChallenges} Complete`;
+
+            // Update quiz challenge icons
+            updateChallengeIcon('grammarQuizIcon', grammarQuizTaken);
+            updateChallengeIcon('vocabQuizIcon', vocabQuizTaken);
+            updateChallengeIcon('mixedQuizIcon', mixedQuizTaken);
+
+            // Update activity challenge icons and progress
+            updateChallengeIcon('grammarActivityIcon', grammarToday >= 3);
+            updateChallengeIcon('vocabActivityIcon', vocabToday >= 20);
+            updateChallengeIcon('timeActivityIcon', activeHours >= 2);
+
+            updateProgressText('grammarActivityProgress', grammarToday, 3);
+            updateProgressText('vocabActivityProgress', vocabToday, 20);
+            updateProgressText('timeActivityProgress', Math.round(activeHours * 10) / 10, 2, 'h');
+
+            // Today's Focus ticks/crowns
+            function setFocus(iconId, completed, crowned){
+                const icon = document.getElementById(iconId);
+                if (!icon) return;
+                if (crowned) {
+                    icon.className = 'w-8 h-8 flex items-center justify-center rounded-full bg-yellow-100 text-yellow-600';
+                    icon.innerHTML = '<i class="ri-vip-crown-2-fill"></i>';
+                } else if (completed) {
+                    icon.className = 'w-8 h-8 flex items-center justify-center rounded-full bg-green-100 text-green-600';
+                    icon.innerHTML = '<i class="ri-check-line"></i>';
+                } else {
+                    icon.className = 'w-8 h-8 flex items-center justify-center rounded-full bg-gray-300 text-white';
+                    icon.innerHTML = '<i class="ri-close-line"></i>';
+                }
+            }
+
+            const grammarCompleted = grammarQuizTaken && grammarToday >= 3;
+            const vocabCompleted = vocabQuizTaken && vocabToday >= 20;
+            const generalCompleted = mixedQuizTaken;
+
+            const grammarCrowned = grammarQuizCount + grammarToday >= Math.ceil(1.5 * 3) && grammarQuizTaken && grammarToday >= 3;
+            const vocabCrowned = vocabQuizCount + vocabToday >= Math.ceil(1.5 * 20) && vocabQuizTaken && vocabToday >= 20;
+            const generalCrowned = mixedQuizCount >= Math.ceil(1.5 * 1) && mixedQuizTaken;
+
+            setFocus('focusGrammarIcon', grammarCompleted, grammarCrowned);
+            setFocus('focusVocabularyIcon', vocabCompleted, vocabCrowned);
+            setFocus('focusGeneralIcon', generalCompleted, generalCrowned);
+
+            // Update hero section progress wheel
+            const progressCircle = document.querySelector('.progress-ring-circle');
+            const todayProgressPct = document.getElementById('todayProgressPct');
+            
+            if (progressCircle) {
+                const circumference = 2 * Math.PI * 40; // r=40 as in SVG
+                const offset = circumference - (dailyProgressPercent / 100) * circumference;
+                progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+                progressCircle.style.strokeDashoffset = offset;
+            }
+            
+            if (todayProgressPct) {
+                todayProgressPct.textContent = `${dailyProgressPercent}%`;
+            }
+        } catch (e) {
+            console.error('Daily challenges refresh error:', e);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        refreshDailyChallenges();
+        setInterval(refreshDailyChallenges, 30000); // Update every 30 seconds
+    });
+})();
+
+// Smooth scroll to Quick Access when clicking "Take Today's Quizzes"
+document.addEventListener('DOMContentLoaded', function(){
+	const btn = document.getElementById('takeQuizzesBtn');
+	const target = document.getElementById('quickAccess');
+	if (btn && target) {
+		btn.addEventListener('click', function(){
+			target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		});
+	}
+});
