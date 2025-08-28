@@ -29,33 +29,88 @@
 		</div>
 	</header>
 
+	<!-- SVG Filter for Mirage Loader -->
+	<svg style="position: absolute; width: 0; height: 0; overflow: hidden;" aria-hidden="true">
+		<defs>
+			<filter id="uib-jelly-ooze">
+				<feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+				<feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8" result="uib-jelly-ooze"/>
+			</filter>
+		</defs>
+	</svg>
+
 	<main class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
 		<div class="mb-6">
 			<h1 class="text-2xl sm:text-3xl font-bold text-dark">Grammar Quiz</h1>
 			<p class="text-warm mt-1">Write a Korean sentence using the shown grammar rule.</p>
+			<% if (message) { %>
+				<div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+					<p class="text-blue-700 text-sm"><%= message %></p>
+				</div>
+			<% } %>
 		</div>
 
-		<form id="grammarQuizForm" class="space-y-6">
-			<% (questions || []).forEach(function(q, idx){ %>
-				<div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-					<div class="flex items-start justify-between">
-						<div>
-							<div class="text-xs text-secondary font-semibold mb-1">Question <%= idx+1 %> of <%= questions.length %></div>
-							<h2 class="text-lg font-semibold text-dark"><%= q.title %></h2>
-							<p class="text-sm text-warm mt-1">English example: <span class="font-medium text-dark"><%= q.Eexample %></span></p>
+		<!-- Quiz Form Section -->
+		<div id="quizFormSection" class="space-y-6">
+			<form id="grammarQuizForm" class="space-y-6">
+				<% (questions || []).forEach(function(q, idx){ %>
+					<div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+						<div class="flex items-start justify-between">
+							<div>
+								<div class="text-xs text-secondary font-semibold mb-1">Question <%= idx+1 %> of <%= questions.length %></div>
+								<h2 class="text-lg font-semibold text-dark"><%= q.title %></h2>
+								<p class="text-sm text-warm mt-1">English example: <span class="font-medium text-dark"><%= q.Eexample %></span></p>
+							</div>
+						</div>
+						<div class="mt-4">
+							<label class="block text-sm text-warm mb-2">Your Korean sentence</label>
+							<textarea name="answer_<%= q.id %>" rows="3" class="w-full border border-gray-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="여기에 한국어 문장을 적으세요..."></textarea>
 						</div>
 					</div>
-					<div class="mt-4">
-						<label class="block text-sm text-warm mb-2">Your Korean sentence</label>
-						<textarea name="answer_<%= q.id %>" rows="3" class="w-full border border-gray-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="여기에 한국어 문장을 적으세요..."></textarea>
-					</div>
-				</div>
-			<% }) %>
+				<% }) %>
 
-			<div class="flex items-center justify-center mt-4">
-				<button type="button" id="btnSubmitCheck" class="btn-primary custom-text-white px-8 py-3 rounded-lg font-semibold shadow-sm transition-colors">Submit & Check</button>
+				<div class="flex items-center justify-center mt-4">
+					<button type="button" id="btnSubmitCheck" class="btn-primary custom-text-white px-8 py-3 rounded-lg font-semibold shadow-sm transition-colors">Submit & Check</button>
+				</div>
+			</form>
+		</div>
+
+		<!-- GPT Response Section (Hidden initially) -->
+		<div id="gptResponseSection" class="hidden space-y-6">
+			<!-- GPT Response Display -->
+			<div id="gptResponseDisplay" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+				<div class="flex items-center space-x-3 mb-4">
+					<div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+						<i class="ri-robot-line text-green-600"></i>
+					</div>
+					<h3 class="text-lg font-semibold text-dark">AI Grammar Checker</h3>
+				</div>
+				<div id="gptResponseContent" class="prose prose-sm max-w-none">
+					<!-- GPT response will be inserted here -->
+				</div>
 			</div>
-		</form>
+
+			<!-- Chat Interface -->
+			<div id="chatInterface" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+				<div class="mb-4">
+					<h3 class="text-lg font-semibold text-dark mb-2">Continue the conversation</h3>
+					<p class="text-sm text-warm">Ask follow-up questions about grammar, get clarification, or practice more!</p>
+				</div>
+				
+				<!-- Chat Messages Container -->
+				<div id="chatMessages" class="space-y-4 mb-4 max-h-96 overflow-y-auto">
+					<!-- Chat messages will be inserted here -->
+				</div>
+
+				<!-- Chat Input Form -->
+				<form id="chatForm" class="flex space-x-3">
+					<input type="text" id="chatInput" placeholder="Ask a question about Korean grammar..." class="flex-1 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/30">
+					<button type="submit" class="btn-primary custom-text-white px-6 py-3 rounded-lg font-medium">
+						<i class="ri-send-plane-line"></i>
+					</button>
+				</form>
+			</div>
+		</div>
 	</main>
 
 	<script src="/scripts/main.js"></script>

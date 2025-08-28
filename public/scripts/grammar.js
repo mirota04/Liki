@@ -95,6 +95,61 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Add loading animation to the main grammar form
+    const addGrammarForm = document.getElementById('addGrammarForm');
+    if (addGrammarForm) {
+        addGrammarForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = addGrammarForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            // Preserve button size so it doesn't shrink during loading
+            const btnWidth = submitBtn.offsetWidth;
+            const btnHeight = submitBtn.offsetHeight;
+            submitBtn.style.width = btnWidth + 'px';
+            submitBtn.style.height = btnHeight + 'px';
+            submitBtn.disabled = true;
+
+            try {
+                // Show CSS mirage loader centered, keep size
+                submitBtn.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%"><div class="loader-container" style="--uib-size: 28px; --uib-color: #ffffff; --uib-speed: 2.2s"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div></div>';
+                
+                // Get form data
+                const formData = new FormData(addGrammarForm);
+                const payload = {
+                    title: formData.get('title'),
+                    explanation: formData.get('explanation'),
+                    Kexample: formData.get('Kexample'),
+                    Eexample: formData.get('Eexample')
+                };
+
+                // Submit form data
+                const res = await fetch('/grammar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    // Close modal and reload page
+                    document.getElementById('addGrammarModal').classList.add('hidden');
+                    window.location.reload();
+                } else {
+                    alert('Failed to add grammar rule');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Network error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                submitBtn.style.width = '';
+                submitBtn.style.height = '';
+            }
+        });
+    }
 });
 
 // Filter functionality

@@ -13,6 +13,151 @@ const saltRounds = 10;
 env.config();
 
 const Korean_API_KEY = process.env.KOREAN_API_KEY;
+const OPEN_API_KEY = process.env.OPENAI_API_KEY;
+
+// Generate five English examples via OpenAI GPT 5 nano
+async function generateEnglishExamplesWithGPT(title, englishExample) {
+  if (!OPEN_API_KEY) {
+    console.error('OpenAI API key missing. Set OPEN_API_KEY in your .env (or OPENAI_API_KEY).');
+    return null;
+  }
+  try {
+    const prompt = `Generate 5 English example sentences for Korean grammar rule "${title}".\n` +
+      `Base example: ${englishExample}\n` +
+      `Rules: One sentence per line, no numbering, keep under 10 words each. Just write the sentences and nothing else.`;
+
+    const resp = await axios.post(
+      'https://api.openai.com/v1/responses',
+      {
+        model: 'gpt-5-nano',
+        input: prompt,
+        max_output_tokens: 1500,
+        reasoning: { effort: 'low' },
+        text: { verbosity: 'low' }
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${OPEN_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 20000,
+      }
+    );
+
+    // ✅ Correct way to extract text from Responses API
+    // Look for message type output with text content
+    let content = '';
+    for (const output of resp.data.output || []) {
+      if (output.type === 'message' && output.content?.[0]?.text) {
+        content = output.content[0].text;
+        break;
+      }
+    }
+
+    if (!content.trim()) {
+      console.warn('OpenAI returned empty content:', JSON.stringify(resp.data, null, 2));
+      return null;
+    }
+
+    const lines = content
+      .split(/\r?\n/)
+      .map(s => s.replace(/^[\-\*\d\.\s]+/, '').trim())
+      .filter(Boolean);
+
+    const examples = lines.slice(0, 5);
+
+    console.log('GPT examples generation result:', examples);
+
+    return examples.length === 5 ? examples : null;
+
+  } catch (err) {
+    console.error('OpenAI example generation failed:', err.response?.data || err.message);
+    return null;
+  }
+}
+
+// Generate grammar feedback via OpenAI GPT 5 nano
+async function generateGrammarFeedbackWithGPT(prompt) {
+  if (!OPEN_API_KEY) {
+    console.error('OpenAI API key missing. Set OPENAI_API_KEY in your .env file.');
+    return null;
+  }
+  try {
+    		const resp = await axios.post(
+			'https://api.openai.com/v1/responses',
+			{
+				model: 'gpt-5-nano',
+				input: prompt,
+				max_output_tokens: 1000,
+				reasoning: { effort: 'low' },
+				text: { verbosity: 'low' }
+			},
+      {
+        headers: {
+          Authorization: `Bearer ${OPEN_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 20000,
+      }
+    );
+
+    // Extract text from Responses API
+    let content = '';
+    for (const output of resp.data.output || []) {
+      if (output.type === 'message' && output.content?.[0]?.text) {
+        content = output.content[0].text;
+        break;
+      }
+    }
+
+    if (!content.trim()) {
+      console.warn('OpenAI returned empty content for grammar feedback:', JSON.stringify(resp.data, null, 2));
+      return null;
+    }
+
+    console.log('GPT grammar feedback generated successfully');
+    return content.trim();
+
+  } catch (err) {
+    console.error('OpenAI grammar feedback generation failed:', err.response?.data || err.message);
+    return null;
+  }
+}
+
+// Check and unlock grammar achievements based on answered questions
+async function checkGrammarAchievements(userId) {
+  try {
+    // Count how many grammar rules the user has answered (asked = true)
+    const countResult = await db.query(
+      'SELECT COUNT(*) as count FROM Grammar WHERE user_id = $1 AND asked = true',
+      [userId]
+    );
+    
+    const answeredCount = parseInt(countResult.rows[0].count);
+    
+    // Check for Grammar Junior achievement (30 answered questions)
+    if (answeredCount >= 30) {
+      await db.query(
+        'UPDATE achievements SET status = true WHERE user_id = $1 AND title = $2',
+        [userId, 'Grammar Junior']
+      );
+      console.log(`User ${userId} unlocked Grammar Junior achievement!`);
+    }
+    
+    // Check for Grammar Master achievement (70 answered questions)
+    if (answeredCount >= 70) {
+      await db.query(
+        'UPDATE achievements SET status = true WHERE user_id = $1 AND title = $2',
+        [userId, 'Grammar Master']
+      );
+      console.log(`User ${userId} unlocked Grammar Master achievement!`);
+    }
+    
+  } catch (err) {
+    console.error('Error checking grammar achievements:', err);
+  }
+}
+
 const ACHIEVEMENT_TEMPLATE_USER_ID = Number(process.env.ACHIEVEMENT_TEMPLATE_USER_ID || 3);
 
 // Set up EJS as the view engine
@@ -145,10 +290,23 @@ app.get("/home", async (req, res) => {
         const activeSeconds = timeRes.rows?.[0]?.active_seconds ?? 0;
         const activeHours = activeSeconds / 3600;
 
-        // For now, quiz completion is simulated (you can implement actual quiz tracking later)
-        const grammarQuizTaken = false;
-        const vocabQuizTaken = false;
-        const mixedQuizTaken = false;
+        // Check quiz completion status from database
+        const grammarQuizRes = await db.query(
+          'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = CURRENT_DATE',
+          [userId, 'grammar']
+        );
+        const vocabQuizRes = await db.query(
+          'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = CURRENT_DATE',
+          [userId, 'vocabulary']
+        );
+        const mixedQuizRes = await db.query(
+          'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = CURRENT_DATE',
+          [userId, 'mixed']
+        );
+
+        const grammarQuizTaken = grammarQuizRes.rows.length > 0;
+        const vocabQuizTaken = vocabQuizRes.rows.length > 0;
+        const mixedQuizTaken = mixedQuizRes.rows.length > 0;
 
         // Calculate daily progress (6 challenges total)
         let completedChallenges = 0;
@@ -247,8 +405,32 @@ app.post("/grammar", async (req, res) => {
     const insertQuery = `
       INSERT INTO Grammar (title, explanation, Kexample, Eexample, user_id)
       VALUES ($1, $2, $3, $4, $5)
+      RETURNING id
     `;
-    await db.query(insertQuery, [title, explanation, Kexample, Eexample, req.session.user.id]);
+    const ins = await db.query(insertQuery, [title, explanation, Kexample, Eexample, req.session.user.id]);
+    const newId = ins.rows?.[0]?.id;
+
+    // Generate examples with GPT 5 nano and store in Examples table
+    if (newId) {
+      try {
+        const generated = await generateEnglishExamplesWithGPT(title, Eexample);
+        console.log('Generated examples for grammar id', newId, generated);
+        if (generated && generated.length === 5) {
+          // Delete-then-insert since Examples.id doesn't have a unique constraint
+          await db.query(`DELETE FROM Examples WHERE id = $1`, [newId]);
+          await db.query(
+            `INSERT INTO Examples (id, example1, example2, example3, example4, example5)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [newId, generated[0], generated[1], generated[2], generated[3], generated[4]]
+          );
+        } else {
+          console.warn('No valid examples generated; skipping DB insert');
+        }
+      } catch (genErr) {
+        console.error('Failed to store generated examples:', genErr);
+      }
+    }
+
     res.redirect('/grammar');
   } catch (err) {
     console.error('Error inserting grammar:', err);
@@ -830,10 +1012,23 @@ app.get('/api/daily-challenges', requireAuth, async (req, res) => {
     const activeSeconds = timeRes.rows?.[0]?.active_seconds ?? 0;
     const activeHours = activeSeconds / 3600;
 
-    // Quiz completion (placeholders until quiz tracking is implemented)
-    const grammarQuizCount = 0; // TODO: replace with real count
-    const vocabQuizCount = 0;   // TODO: replace with real count
-    const mixedQuizCount = 0;   // TODO: replace with real count
+    // Check quiz completion status from database
+    const grammarQuizRes = await db.query(
+      'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = CURRENT_DATE',
+      [userId, 'grammar']
+    );
+    const vocabQuizRes = await db.query(
+      'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = CURRENT_DATE',
+      [userId, 'vocabulary']
+    );
+    const mixedQuizRes = await db.query(
+      'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = CURRENT_DATE',
+      [userId, 'mixed']
+    );
+
+    const grammarQuizCount = grammarQuizRes.rows.length;
+    const vocabQuizCount = vocabQuizRes.rows.length;
+    const mixedQuizCount = mixedQuizRes.rows.length;
 
     const grammarQuizTaken = grammarQuizCount > 0;
     const vocabQuizTaken = vocabQuizCount > 0;
@@ -908,16 +1103,68 @@ app.get('/api/stats/content-week', requireAuth, async (req, res) => {
 app.get('/quiz/grammar', requireAuth, async (req, res) => {
   try {
     const userId = req.session.user.id;
-    const qRes = await db.query(
-      `SELECT id, title, Eexample
-       FROM Grammar
-       WHERE user_id = $1
+    
+    // First, try to get unasked grammar rules (asked = false)
+    let qRes = await db.query(
+      `SELECT 
+        g.id, 
+        g.title, 
+        g.Eexample,
+        e.example1, e.example2, e.example3, e.example4, e.example5
+       FROM Grammar g
+       LEFT JOIN Examples e ON g.id = e.id
+       WHERE g.user_id = $1 AND g.asked = false
        ORDER BY RANDOM()
        LIMIT 3`,
       [userId]
     );
-    const questions = qRes.rows || [];
-    res.render('GrammarQuiz.ejs', { questions });
+    
+    let questions = qRes.rows;
+    let message = null;
+    
+    // If we don't have 3 unasked rules, fill with asked ones and show message
+    if (questions.length < 3) {
+      const remainingSlots = 3 - questions.length;
+      
+      if (remainingSlots > 0) {
+        const askedRes = await db.query(
+          `SELECT 
+            g.id, 
+            g.title, 
+            g.Eexample,
+            e.example1, e.example2, e.example3, e.example4, e.example5
+           FROM Grammar g
+           LEFT JOIN Examples e ON g.id = e.id
+           WHERE g.user_id = $1 AND g.asked = true
+           ORDER BY RANDOM()
+           LIMIT $2`,
+          [userId, remainingSlots]
+        );
+        
+        questions = [...questions, ...askedRes.rows];
+        message = `You're all caught up! Showing ${qRes.rows.length} new rules and ${askedRes.rows.length} review rules.`;
+      }
+    }
+    
+    // Process questions to randomly select one example for each
+    const processedQuestions = questions.map(row => {
+      const examples = [row.example1, row.example2, row.example3, row.example4, row.example5]
+        .filter(example => example && example.trim()) // Remove empty examples
+        .sort(() => Math.random() - 0.5); // Shuffle examples
+      
+      const selectedExample = examples[0] || row.Eexample; // Fallback to original example if no GPT examples
+      
+      return {
+        id: row.id,
+        title: row.title,
+        Eexample: selectedExample
+      };
+    });
+    
+    res.render('GrammarQuiz.ejs', { 
+      questions: processedQuestions,
+      message: message
+    });
   } catch (err) {
     console.error('Render grammar quiz error:', err);
     res.redirect('/home');
@@ -928,11 +1175,191 @@ app.get('/quiz/grammar', requireAuth, async (req, res) => {
 app.post('/quiz/grammar/submit', requireAuth, async (req, res) => {
   try {
     const answers = req.body?.answers || {};
-    // TODO: store attempt and evaluate
+    
+    // Mark grammar quiz as completed for today
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    await db.query(
+      'INSERT INTO Daily_Quiz_Completions (user_id, quiz_type, completed_date) VALUES ($1, $2, $3) ON CONFLICT (user_id, quiz_type, completed_date) DO NOTHING',
+      [req.session.user.id, 'grammar', today]
+    );
+    
+    // Mark the grammar rules that were asked in this quiz as "asked = true"
+    const questionIds = Object.keys(answers).map(key => key.replace('answer_', ''));
+    if (questionIds.length > 0) {
+      await db.query(
+        'UPDATE Grammar SET asked = true WHERE id = ANY($1) AND user_id = $2',
+        [questionIds, req.session.user.id]
+      );
+    }
+    
+    // Check and unlock grammar achievements
+    await checkGrammarAchievements(req.session.user.id);
+    
     res.json({ success: true });
   } catch (err) {
     console.error('Submit grammar quiz error:', err);
     res.status(500).json({ error: 'submit_failed' });
+  }
+});
+
+// Check if user has completed today's quiz
+app.get('/api/quiz/status/:type', requireAuth, async (req, res) => {
+  try {
+    const quizType = req.params.type; // 'grammar', 'vocabulary', 'mixed'
+    const today = new Date().toISOString().split('T')[0];
+    
+    const result = await db.query(
+      'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = $3',
+      [req.session.user.id, quizType, today]
+    );
+    
+    const isCompleted = result.rows.length > 0;
+    res.json({ completed: isCompleted });
+  } catch (err) {
+    console.error('Error checking quiz status:', err);
+    res.status(500).json({ error: 'Failed to check quiz status' });
+  }
+});
+
+
+
+// GPT integration for checking grammar quiz answers
+app.post('/api/grammar/check-answers', requireAuth, async (req, res) => {
+  try {
+    const { questions, conversationHistory } = req.body;
+    
+    if (!questions || !Array.isArray(questions)) {
+      return res.status(400).json({ error: 'Invalid questions data' });
+    }
+
+    // Build prompt for GPT
+    let prompt = `You are an expert Korean language teacher. Your task is to objectively evaluate Korean sentences written by a student. Be honest and critical - do not agree with everything. If there are mistakes, point them out clearly and provide corrections.
+
+IMPORTANT: Write your feedback primarily in ENGLISH. Only use Korean for:
+- The corrected Korean sentences
+- Korean grammar rule names when necessary
+- Korean examples
+
+Grammar Rules and Student Answers to evaluate:
+
+`;
+
+    questions.forEach((q, index) => {
+      prompt += `${index + 1}. Grammar Rule: "${q.title}"
+   English Example: "${q.englishExample}"
+   Student's Korean Answer: "${q.koreanAnswer}"
+
+`;
+    });
+
+    prompt += `Please evaluate each answer objectively in ENGLISH:
+- If correct: Say "Correct" and briefly explain why it's good in English
+- If incorrect: Explain what's wrong in English and provide the correct Korean sentence
+- Be specific about grammar mistakes, vocabulary errors, or unnatural expressions
+- Keep each evaluation concise (1-2 sentences per answer)
+- Focus on the most important corrections
+
+Format each response as:
+[GRAMMAR RULE NAME]:
+1. Evaluation: [English explanation of what's right/wrong]
+2. Correction: [Correct Korean sentence if needed]
+3. Explanation: [Brief English explanation of the grammar rule usage]
+
+IMPORTANT: Each evaluation must start with the grammar rule name in bold or clearly visible format so the student knows which question is being evaluated.
+
+Remember: Be objective and critical. Don't praise incorrect answers. Write feedback in English, corrections in Korean.`;
+
+    // Call OpenAI API
+    const feedback = await generateGrammarFeedbackWithGPT(prompt);
+    
+    if (feedback) {
+      res.json({ feedback });
+    } else {
+      res.status(500).json({ error: 'Failed to generate feedback' });
+    }
+
+  } catch (err) {
+    console.error('Error checking grammar answers:', err);
+    res.status(500).json({ error: 'check_failed' });
+  }
+});
+
+// GPT integration for chat functionality
+app.post('/api/grammar/chat', requireAuth, async (req, res) => {
+  try {
+    const { message, quizData, conversationHistory } = req.body;
+    
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    // Build context-aware prompt
+    let prompt = `You are a helpful Korean language tutor. The student has just completed a grammar quiz and is asking follow-up questions.
+
+Context from the quiz:
+`;
+
+    if (quizData && Array.isArray(quizData)) {
+      quizData.forEach((q, index) => {
+        prompt += `${index + 1}. Grammar Rule: "${q.title}"
+   English Example: "${q.englishExample}"
+   Student's Korean Answer: "${q.koreanAnswer}"
+
+`;
+      });
+    }
+
+    if (conversationHistory && conversationHistory.length > 0) {
+      prompt += `Previous conversation:
+`;
+      conversationHistory.slice(-5).forEach(msg => { // Last 5 messages for context
+        prompt += `${msg.role === 'user' ? 'Student' : 'Tutor'}: ${msg.content}\n`;
+      });
+    }
+
+    prompt += `Student's current question: "${message}"
+
+Please provide a helpful, educational response in ENGLISH. You can:
+- Explain grammar concepts in English
+- Provide additional examples (Korean examples, English explanations)
+- Answer questions about Korean language in English
+- Give practice suggestions in English
+- Correct any misconceptions in English
+
+IMPORTANT: Write your responses primarily in English. Only use Korean for:
+- Korean grammar rule names
+- Korean example sentences
+- Korean vocabulary when necessary
+
+Keep your response concise but informative (2-4 sentences).`;
+
+    // Call OpenAI API
+    const response = await generateGrammarFeedbackWithGPT(prompt);
+    
+    if (response) {
+      res.json({ response });
+    } else {
+      res.status(500).json({ error: 'Failed to generate response' });
+    }
+
+  } catch (err) {
+    console.error('Error in grammar chat:', err);
+    res.status(500).json({ error: 'chat_failed' });
+  }
+});
+
+// Reset all grammar rules to unasked (for testing or when user wants to start over)
+app.post('/api/grammar/reset-asked', requireAuth, async (req, res) => {
+  try {
+    await db.query(
+      'UPDATE Grammar SET asked = false WHERE user_id = $1',
+      [req.session.user.id]
+    );
+    res.json({ success: true, message: 'All grammar rules reset to unasked' });
+  } catch (err) {
+    console.error('Error resetting grammar rules:', err);
+    res.status(500).json({ error: 'Failed to reset grammar rules' });
   }
 });
 

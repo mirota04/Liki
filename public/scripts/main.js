@@ -124,18 +124,18 @@ document.addEventListener('DOMContentLoaded', function() {
 	initDarkMode();
 	
 	// Set initial progress wheel state based on server-side data - IMMEDIATELY
-	const progressCircle = document.querySelector('.progress-ring-circle');
+    const progressCircle = document.querySelector('.progress-ring-circle');
 	const todayProgressPct = document.getElementById('todayProgressPct');
 	
 	if (progressCircle && todayProgressPct) {
 		// Get initial progress from data attribute (server-side calculated)
 		const initialProgress = parseInt(progressCircle.getAttribute('data-initial-progress')) || 0;
-		const circumference = 2 * Math.PI * 40;
+    const circumference = 2 * Math.PI * 40;
 		const offset = circumference - (initialProgress / 100) * circumference;
 		
 		// Set initial stroke state IMMEDIATELY - no delay
 		progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
-		progressCircle.style.strokeDashoffset = offset;
+        progressCircle.style.strokeDashoffset = offset;
 		
 		// Also update the text if it doesn't match
 		if (todayProgressPct.textContent !== `${initialProgress}%`) {
@@ -198,14 +198,14 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
     const cards = document.querySelectorAll('.card-hover');
     if (cards.length > 0) {
-        cards.forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-4px)';
-            });
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0)';
-            });
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px)';
         });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
     }
 });
 
@@ -213,14 +213,14 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
     const buttons = document.querySelectorAll('.btn-primary');
     if (buttons.length > 0) {
-        buttons.forEach(button => {
-            button.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-2px)';
-            });
-            button.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0)';
-            });
+    buttons.forEach(button => {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
         });
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
     }
 });
 
@@ -806,16 +806,44 @@ document.addEventListener('DOMContentLoaded', function(){
 
 		let lastOpenedType = 'general';
 
-		function openModal(fromCard){
+		// Check if user has completed today's quiz
+		async function checkQuizCompletion(quizType) {
+			try {
+				const response = await fetch(`/api/quiz/status/${quizType}`);
+				const data = await response.json();
+				return data.completed || false;
+			} catch (err) {
+				console.error('Error checking quiz status:', err);
+				return false;
+			}
+		}
+
+		async function openModal(fromCard){
 			if (!fromCard) return;
 			const type = fromCard.getAttribute('data-quiz-type') || 'general';
 			lastOpenedType = type;
-			const title = fromCard.getAttribute('data-quiz-title') || 'Start Quiz';
-			const desc = fromCard.getAttribute('data-quiz-desc') || 'Get ready to begin.';
-			const icon = fromCard.getAttribute('data-quiz-icon') || 'ri-question-line';
+			
+			// Check if quiz is already completed for today
+			const isCompleted = await checkQuizCompletion(type);
+			
+			let title, desc, icon;
+			
+			if (isCompleted) {
+				title = 'Quiz Already Completed';
+				desc = `You've already completed today's ${type} quiz. Come back tomorrow for a new challenge!`;
+				icon = 'ri-check-double-line';
+			} else {
+				title = fromCard.getAttribute('data-quiz-title') || 'Start Quiz';
+				desc = fromCard.getAttribute('data-quiz-desc') || 'Get ready to begin.';
+				icon = fromCard.getAttribute('data-quiz-icon') || 'ri-question-line';
+			}
 
 			if (iconBox) {
-				iconBox.className = 'w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 text-gray-600';
+				if (isCompleted) {
+					iconBox.className = 'w-10 h-10 flex items-center justify-center rounded-xl bg-green-100 text-green-600';
+				} else {
+					iconBox.className = 'w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 text-gray-600';
+				}
 				iconBox.innerHTML = `<i class="${icon} ri-lg"></i>`;
 			}
 			if (titleEl) titleEl.textContent = title;
@@ -836,15 +864,27 @@ document.addEventListener('DOMContentLoaded', function(){
 			document.body.style.overflow = 'hidden';
 
 			if (btnStart) {
-				btnStart.onclick = () => {
-					// Navigate based on type
-					if (lastOpenedType === 'grammar') {
-						window.location.href = '/quiz/grammar';
-					} else {
-						// TODO: other quiz routes
-						closeModal();
-					}
-				};
+				if (isCompleted) {
+					// Disable button and change appearance for completed quiz
+					btnStart.disabled = true;
+					btnStart.className = 'px-6 py-3 bg-gray-300 text-gray-500 rounded-button font-medium cursor-not-allowed';
+					btnStart.textContent = 'Already Completed';
+					btnStart.onclick = null;
+				} else {
+					// Enable button for new quiz
+					btnStart.disabled = false;
+					btnStart.className = 'px-6 py-3 btn-primary custom-text-white rounded-button font-medium';
+					btnStart.textContent = 'Start Quiz';
+					btnStart.onclick = () => {
+						// Navigate based on type
+						if (lastOpenedType === 'grammar') {
+							window.location.href = '/quiz/grammar';
+						} else {
+							// TODO: other quiz routes
+							closeModal();
+						}
+					};
+				}
 			}
 		}
 

@@ -42,6 +42,16 @@ CREATE TABLE Achievements (
 	user_id INT, FOREIGN KEY (user_id) REFERENCES Users(id)
 );
 
+DROP TABLE IF EXISTS Examples;
+CREATE TABLE Examples (
+    id BIGINT,
+    example1 TEXT NOT NULL,
+    example2 TEXT NOT NULL,
+    example3 TEXT NOT NULL,
+    example4 TEXT NOT NULL,
+    example5 TEXT NOT NULL
+);
+
 -- Streak feature tables
 
 -- Tracks per-user daily active time in seconds (aggregated by local date)
@@ -73,6 +83,19 @@ CREATE TABLE User_Activity_Weekly (
   PRIMARY KEY (user_id, week_start)
 );
 
+-- Quiz completion tracking
+DROP TABLE IF EXISTS Daily_Quiz_Completions;
+CREATE TABLE Daily_Quiz_Completions (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
+    quiz_type VARCHAR(50) NOT NULL, -- 'grammar', 'vocabulary', 'mixed'
+    completed_date DATE NOT NULL,
+    completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, quiz_type, completed_date)
+);
+
 -- Helpful indexes
 CREATE INDEX IF NOT EXISTS idx_user_activity_user_date ON User_Activity (user_id, activity_date);
 CREATE INDEX IF NOT EXISTS idx_user_activity_user ON User_Activity (user_id);
+CREATE INDEX IF NOT EXISTS idx_daily_quiz_user_date ON Daily_Quiz_Completions (user_id, completed_date);
+CREATE INDEX IF NOT EXISTS idx_daily_quiz_user_type ON Daily_Quiz_Completions (user_id, quiz_type);
