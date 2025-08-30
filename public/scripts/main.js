@@ -109,6 +109,13 @@ function navigateToPage(page) {
             break;
         case 'login':
             window.location.href = '/login';
+            break;
+        case 'quiz-grammar':
+            window.location.href = '/quiz/grammar';
+            break;
+        case 'quiz-vocabulary':
+            window.location.href = '/quiz/vocabulary';
+            break;
         default:
             console.warn(`Unknown page: ${page}`);
             break;
@@ -803,14 +810,26 @@ document.addEventListener('DOMContentLoaded', function(){
 		const modeGrammar = document.getElementById('modeGrammar');
 		const modeBoth = document.getElementById('modeBoth');
 		let selectedMode = 'both';
+		
+		const vocabDirectionSelector = document.getElementById('vocabDirectionSelector');
+		const directionKoEn = document.getElementById('directionKoEn');
+		const directionEnKo = document.getElementById('directionEnKo');
+		let selectedDirection = 'en-ko'; // Default: English → Korean
 
 		let lastOpenedType = 'general';
 
 		// Check if user has completed today's quiz
 		async function checkQuizCompletion(quizType) {
 			try {
+				console.log('Checking quiz completion for type:', quizType);
 				const response = await fetch(`/api/quiz/status/${quizType}`);
+				console.log('Quiz status response:', response);
+				if (!response.ok) {
+					console.error('Quiz status response not ok:', response.status);
+					return false;
+				}
 				const data = await response.json();
+				console.log('Quiz status data:', data);
 				return data.completed || false;
 			} catch (err) {
 				console.error('Error checking quiz status:', err);
@@ -822,6 +841,13 @@ document.addEventListener('DOMContentLoaded', function(){
 			if (!fromCard) return;
 			const type = fromCard.getAttribute('data-quiz-type') || 'general';
 			lastOpenedType = type;
+			console.log('Opening modal for quiz type:', type);
+			console.log('Card element:', fromCard);
+			console.log('Card data attributes:', {
+				'data-quiz-type': fromCard.getAttribute('data-quiz-type'),
+				'data-quiz-title': fromCard.getAttribute('data-quiz-title'),
+				'data-quiz-desc': fromCard.getAttribute('data-quiz-desc')
+			});
 			
 			// Check if quiz is already completed for today
 			const isCompleted = await checkQuizCompletion(type);
@@ -859,17 +885,31 @@ document.addEventListener('DOMContentLoaded', function(){
 					modeSelector.classList.add('hidden');
 				}
 			}
+			
+			// Show direction selector for vocabulary and mixed quizzes
+			if (vocabDirectionSelector) {
+				if (type === 'vocabulary' || type === 'mixed') {
+					vocabDirectionSelector.classList.remove('hidden');
+					selectedDirection = 'en-ko'; // Default: English → Korean
+					setDirectionButtonStyles('en-ko');
+				} else {
+					vocabDirectionSelector.classList.add('hidden');
+				}
+			}
 
 			modal.classList.remove('hidden');
 			document.body.style.overflow = 'hidden';
 
 			if (btnStart) {
+				console.log('Setting up Start Quiz button, isCompleted:', isCompleted);
+
 				if (isCompleted) {
 					// Disable button and change appearance for completed quiz
 					btnStart.disabled = true;
 					btnStart.className = 'px-6 py-3 bg-gray-300 text-gray-500 rounded-button font-medium cursor-not-allowed';
 					btnStart.textContent = 'Already Completed';
 					btnStart.onclick = null;
+					console.log('Button disabled - quiz already completed');
 				} else {
 					// Enable button for new quiz
 					btnStart.disabled = false;
@@ -879,8 +919,12 @@ document.addEventListener('DOMContentLoaded', function(){
 						// Navigate based on type
 						if (lastOpenedType === 'grammar') {
 							window.location.href = '/quiz/grammar';
+						} else if (lastOpenedType === 'vocabulary') {
+							window.location.href = `/quiz/vocabulary?direction=${selectedDirection}`;
+						} else if (lastOpenedType === 'mixed') {
+							window.location.href = `/quiz/mixed?direction=${selectedDirection}`;
 						} else {
-							// TODO: other quiz routes
+							// For other types keep modal behavior for now
 							closeModal();
 						}
 					};
@@ -899,10 +943,24 @@ document.addEventListener('DOMContentLoaded', function(){
 			setBtn(modeGrammar, mode === 'grammar');
 			setBtn(modeBoth, mode === 'both');
 		}
+		
+		function setDirectionButtonStyles(direction){
+			function setBtn(btn, active){
+				if (!btn) return;
+				btn.className = active
+					? 'px-3 py-2 rounded-button custom-bg-primary custom-text-white text-sm'
+					: 'px-3 py-2 rounded-button bg-gray-100 text-dark text-sm';
+			}
+			setBtn(directionKoEn, direction === 'ko-en');
+			setBtn(directionEnKo, direction === 'en-ko');
+		}
 
 		if (modeWords) modeWords.addEventListener('click', () => { selectedMode = 'words'; setModeButtonStyles('words'); });
 		if (modeGrammar) modeGrammar.addEventListener('click', () => { selectedMode = 'grammar'; setModeButtonStyles('grammar'); });
 		if (modeBoth) modeBoth.addEventListener('click', () => { selectedMode = 'both'; setModeButtonStyles('both'); });
+		
+		if (directionKoEn) directionKoEn.addEventListener('click', () => { selectedDirection = 'ko-en'; setDirectionButtonStyles('ko-en'); });
+		if (directionEnKo) directionEnKo.addEventListener('click', () => { selectedDirection = 'en-ko'; setDirectionButtonStyles('en-ko'); });
 
 		function closeModal(){
 			if (!modal) return;

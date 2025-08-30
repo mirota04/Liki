@@ -29,6 +29,7 @@ CREATE TABLE Dictionary (
 	meaning TEXT NOT NULL,
 	meaning_geo TEXT,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	asked BOOLEAN DEFAULT FALSE,
 	user_id INT, FOREIGN KEY (user_id) REFERENCES Users(id)
 );
 

@@ -31,7 +31,7 @@ async function generateEnglishExamplesWithGPT(title, englishExample) {
       {
         model: 'gpt-5-nano',
         input: prompt,
-        max_output_tokens: 1500,
+        max_output_tokens: 2000,
         reasoning: { effort: 'low' },
         text: { verbosity: 'low' }
       },
@@ -77,7 +77,7 @@ async function generateEnglishExamplesWithGPT(title, englishExample) {
 }
 
 // Generate grammar feedback via OpenAI GPT 5 nano
-async function generateGrammarFeedbackWithGPT(prompt) {
+async function generateGrammarFeedbackWithGPT(prompt, maxTokens = 2000) {
   if (!OPEN_API_KEY) {
     console.error('OpenAI API key missing. Set OPENAI_API_KEY in your .env file.');
     return null;
@@ -88,7 +88,7 @@ async function generateGrammarFeedbackWithGPT(prompt) {
 			{
 				model: 'gpt-5-nano',
 				input: prompt,
-				max_output_tokens: 1000,
+				max_output_tokens: maxTokens,
 				reasoning: { effort: 'low' },
 				text: { verbosity: 'low' }
 			},
@@ -155,6 +155,40 @@ async function checkGrammarAchievements(userId) {
     
   } catch (err) {
     console.error('Error checking grammar achievements:', err);
+  }
+}
+
+// Check and unlock vocabulary achievements based on answered questions
+async function checkVocabularyAchievements(userId) {
+  try {
+    // Count how many vocabulary words the user has answered (asked = true)
+    const countResult = await db.query(
+      'SELECT COUNT(*) as count FROM Dictionary WHERE user_id = $1 AND asked = true',
+      [userId]
+    );
+    
+    const answeredCount = parseInt(countResult.rows[0].count);
+    
+    // Check for Vocabulary Junior achievement (50 answered questions)
+    if (answeredCount >= 50) {
+      await db.query(
+        'UPDATE achievements SET status = true WHERE user_id = $1 AND title = $2',
+        [userId, 'Vocabulary Junior']
+      );
+      console.log(`User ${userId} unlocked Vocabulary Junior achievement!`);
+    }
+    
+    // Check for Vocabulary Master achievement (100 answered questions)
+    if (answeredCount >= 100) {
+      await db.query(
+        'UPDATE achievements SET status = true WHERE user_id = $1 AND title = $2',
+        [userId, 'Vocabulary Master']
+      );
+      console.log(`User ${userId} unlocked Vocabulary Master achievement!`);
+    }
+    
+  } catch (err) {
+    console.error('Error checking vocabulary achievements:', err);
   }
 }
 
@@ -290,18 +324,20 @@ app.get("/home", async (req, res) => {
         const activeSeconds = timeRes.rows?.[0]?.active_seconds ?? 0;
         const activeHours = activeSeconds / 3600;
 
-        // Check quiz completion status from database
+        // Check quiz completion status from database using user's timezone
+        const todayDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+        
         const grammarQuizRes = await db.query(
-          'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = CURRENT_DATE',
-          [userId, 'grammar']
+          'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = $3',
+          [userId, 'grammar', todayDate]
         );
         const vocabQuizRes = await db.query(
-          'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = CURRENT_DATE',
-          [userId, 'vocabulary']
+          'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = $3',
+          [userId, 'vocabulary', todayDate]
         );
         const mixedQuizRes = await db.query(
-          'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = CURRENT_DATE',
-          [userId, 'mixed']
+          'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = $3',
+          [userId, 'mixed', todayDate]
         );
 
         const grammarQuizTaken = grammarQuizRes.rows.length > 0;
@@ -1012,18 +1048,20 @@ app.get('/api/daily-challenges', requireAuth, async (req, res) => {
     const activeSeconds = timeRes.rows?.[0]?.active_seconds ?? 0;
     const activeHours = activeSeconds / 3600;
 
-    // Check quiz completion status from database
+    // Check quiz completion status from database using user's timezone
+    const todayDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    
     const grammarQuizRes = await db.query(
-      'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = CURRENT_DATE',
-      [userId, 'grammar']
+      'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = $3',
+      [userId, 'grammar', todayDate]
     );
     const vocabQuizRes = await db.query(
-      'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = CURRENT_DATE',
-      [userId, 'vocabulary']
+      'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = $3',
+      [userId, 'vocabulary', todayDate]
     );
     const mixedQuizRes = await db.query(
-      'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = CURRENT_DATE',
-      [userId, 'mixed']
+      'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = $3',
+      [userId, 'mixed', todayDate]
     );
 
     const grammarQuizCount = grammarQuizRes.rows.length;
@@ -1098,6 +1136,445 @@ app.get('/api/stats/content-week', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'content_week_stats_failed' });
   }
 });
+
+// Render Vocabulary Quiz
+app.get('/quiz/vocabulary', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const direction = req.query.direction || 'en-ko'; // Default to English → Korean
+    
+    // Get the last 3 successful days (days with >1 hour activity)
+    const successfulDaysRes = await db.query(
+      `SELECT DISTINCT activity_date 
+       FROM User_Activity 
+       WHERE user_id = $1 
+         AND active_seconds >= 3600 
+         AND activity_date < CURRENT_DATE
+       ORDER BY activity_date DESC 
+       LIMIT 3`,
+      [userId]
+    );
+    
+    if (successfulDaysRes.rows.length === 0) {
+      // No successful days, render with empty questions
+      return res.render('VocabularyQuiz.ejs', { questions: [] });
+    }
+    
+    const successfulDates = successfulDaysRes.rows.map(row => row.activity_date);
+    const questions = [];
+    
+               // For each successful day, get up to 15 words
+           for (const date of successfulDates) {
+             // First try to get unasked words (asked = false)
+             let unaskedRes = await db.query(
+               `SELECT id, word, meaning, meaning_geo, created_at
+                FROM Dictionary 
+                WHERE user_id = $1 
+                  AND DATE(created_at) = $2
+                  AND asked = false
+                ORDER BY RANDOM()
+                LIMIT 15`,
+               [userId, date]
+             );
+             
+             let dayQuestions = unaskedRes.rows;
+             
+             // If we don't have 15 words, fill with asked words
+             if (dayQuestions.length < 15) {
+               const remainingSlots = 15 - dayQuestions.length;
+               const askedRes = await db.query(
+                 `SELECT id, word, meaning, meaning_geo, created_at
+                  FROM Dictionary 
+                  WHERE user_id = $1 
+                    AND DATE(created_at) = $2
+                  AND asked = true
+                  ORDER BY RANDOM()
+                  LIMIT $3`,
+                 [userId, date, remainingSlots]
+               );
+               
+               dayQuestions = [...dayQuestions, ...askedRes.rows];
+             }
+             
+             // Add day questions to total questions
+             questions.push(...dayQuestions);
+           }
+           
+           // Shuffle all questions for variety
+           const shuffledQuestions = questions.sort(() => Math.random() - 0.5);
+           
+           const formattedQuestions = shuffledQuestions.map((word, index) => {
+             if (direction === 'ko-en') {
+               // Korean → English: Show Korean word, expect English answer
+               return {
+                 id: word.id,
+                 prompt: `Translate to English: ${word.word}`,
+                 answer: word.meaning,
+                 korean: word.word,
+                 georgian: word.meaning_geo,
+                 direction: 'ko-en'
+               };
+             } else {
+               // English → Korean: Show English meaning, expect Korean answer
+               return {
+                 id: word.id,
+                 prompt: `Translate to Korean: ${word.meaning}`,
+                 answer: word.word,
+                 korean: word.word,
+                 georgian: word.meaning_geo,
+                 direction: 'en-ko'
+               };
+             }
+           });
+    
+    console.log(`Vocabulary quiz generated for user ${userId}:`);
+    console.log(`- Successful days: ${successfulDates.map(d => d.toISOString().split('T')[0])}`);
+    console.log(`- Total questions: ${formattedQuestions.length}`);
+    
+    res.render('VocabularyQuiz.ejs', { questions: formattedQuestions });
+  } catch (err) {
+    console.error('Render vocabulary quiz error:', err);
+    res.redirect('/home');
+  }
+});
+
+// Render Mixed Quiz (1/1/1)
+app.get('/quiz/mixed', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const direction = req.query.direction === 'ko-en' ? 'ko-en' : 'en-ko';
+    
+    // Get successful days (days where user spent >1 hour studying)
+    const successfulDaysResult = await db.query(`
+      SELECT DISTINCT activity_date
+      FROM User_Activity 
+      WHERE user_id = $1 
+      AND active_seconds > 3600  -- More than 1 hour (3600 seconds)
+      ORDER BY activity_date DESC
+    `, [userId]);
+    
+    const successfulDates = successfulDaysResult.rows.map(row => new Date(row.activity_date));
+    
+    console.log(`Found ${successfulDates.length} successful days for user ${userId}`);
+    
+    // Get dates for 1, 7, and 30 successful days ago
+    let targetDates = [];
+    if (successfulDates.length >= 1) {
+      targetDates.push(successfulDates[0]); // 1 successful day ago
+    }
+    if (successfulDates.length >= 7) {
+      targetDates.push(successfulDates[6]); // 7 successful days ago
+    }
+    if (successfulDates.length >= 30) {
+      targetDates.push(successfulDates[29]); // 30 successful days ago
+    }
+    
+    // If we don't have enough successful days, fill with available ones
+    if (targetDates.length < 3) {
+      targetDates = successfulDates.slice(0, Math.min(3, successfulDates.length));
+    }
+    
+    // Format dates for SQL queries
+    const dateStrings = targetDates.map(date => date.toISOString().split('T')[0]);
+    
+    console.log(`Mixed quiz target dates for user ${userId}:`);
+    console.log(`- Successful days found: ${successfulDates.length}`);
+    console.log(`- Target dates: ${dateStrings.join(', ')}`);
+    
+    // Get words added on these successful days
+    let wordsResult;
+    if (dateStrings.length > 0) {
+      wordsResult = await db.query(`
+        SELECT id, word, meaning, meaning_geo, created_at
+        FROM Dictionary 
+        WHERE user_id = $1 
+        AND DATE(created_at) = ANY($2)
+        ORDER BY created_at DESC
+      `, [userId, dateStrings]);
+    } else {
+      wordsResult = { rows: [] };
+    }
+    
+    // Get grammar rules added on these successful days
+    let grammarResult;
+    if (dateStrings.length > 0) {
+      grammarResult = await db.query(`
+        SELECT id, title, Eexample, created_at
+        FROM Grammar 
+        WHERE user_id = $1 
+        AND DATE(created_at) = ANY($2)
+        ORDER BY created_at DESC
+      `, [userId, dateStrings]);
+      
+      // For each grammar rule, fetch one random example from the Examples table
+      for (let rule of grammarResult.rows) {
+        try {
+          const exampleResult = await db.query(`
+            SELECT example1, example2, example3, example4, example5
+            FROM Examples 
+            WHERE id = $1
+          `, [rule.id]);
+          
+          if (exampleResult.rows.length > 0) {
+            const examples = exampleResult.rows[0];
+            // Pick one random example from the 5 available
+            const exampleKeys = ['example1', 'example2', 'example3', 'example4', 'example5'];
+            const randomKey = exampleKeys[Math.floor(Math.random() * exampleKeys.length)];
+            rule.englishExample = examples[randomKey] || rule.Eexample || 'No example available';
+          } else {
+            // Fallback to Eexample if no examples found
+            rule.englishExample = rule.Eexample || 'No example available';
+          }
+        } catch (err) {
+          console.error(`Error fetching examples for grammar rule ${rule.id}:`, err);
+          // Fallback to Eexample if there's an error
+          rule.englishExample = rule.Eexample || 'No example available';
+        }
+      }
+    } else {
+      grammarResult = { rows: [] };
+    }
+    
+    console.log(`Found ${wordsResult.rows.length} words and ${grammarResult.rows.length} grammar rules for mixed quiz`);
+    
+    // Format vocabulary questions based on direction
+    const formattedQuestions = wordsResult.rows.map((word, index) => {
+      if (direction === 'ko-en') {
+        // Korean → English: Show Korean word, expect English answer
+        return {
+          id: word.id,
+          prompt: `Translate to English: ${word.word}`,
+          answer: word.meaning,
+          korean: word.word,
+          georgian: word.meaning_geo,
+          direction: 'ko-en'
+        };
+      } else {
+        // English → Korean: Show English meaning, expect Korean answer
+        return {
+          id: word.id,
+          prompt: `Translate to Korean: ${word.meaning}`,
+          answer: word.word,
+          korean: word.word,
+          georgian: word.meaning_geo,
+          direction: 'en-ko'
+        };
+      }
+    });
+    
+    // Format grammar questions
+    const grammarBlock = {
+      questions: grammarResult.rows.map((rule, index) => ({
+        id: rule.id,
+        title: rule.title,
+        englishExample: rule.englishExample
+      }))
+    };
+    
+    // If no questions found, provide fallback data for testing
+    if (formattedQuestions.length === 0 && grammarBlock.questions.length === 0) {
+      console.log('No real data found, using fallback sample data');
+      
+      // Provide fallback sample data so frontend can display properly
+      const fallbackQuestions = [
+        direction === 'ko-en'
+          ? { id: 1, prompt: 'Translate to English: 학교', answer: 'school', direction: 'ko-en' }
+          : { id: 1, prompt: 'Translate to Korean: school', answer: '학교', direction: 'en-ko' },
+        direction === 'ko-en'
+          ? { id: 2, prompt: 'Translate to English: 사랑', answer: 'love', direction: 'ko-en' }
+          : { id: 2, prompt: 'Translate to Korean: love', answer: '사랑', direction: 'en-ko' }
+      ];
+      
+      const fallbackGrammar = {
+        questions: [
+          { id: 101, title: '는/은 topic particle', englishExample: 'As for me, I like coffee.' },
+          { id: 102, title: '에서/부터 location & start', englishExample: 'Start from the station.' },
+          { id: 103, title: 'ㄴ/는 모양이다', englishExample: 'It looks like it will rain.' }
+        ]
+      };
+      
+      return res.render('MixedQuiz.ejs', { 
+        questions: fallbackQuestions, 
+        grammarBlock: fallbackGrammar,
+        message: `Using sample data - no content found from successful study days. You have ${successfulDates.length} successful days recorded. Study more to unlock real questions!`
+      });
+    }
+    
+    res.render('MixedQuiz.ejs', { 
+      questions: formattedQuestions, 
+      grammarBlock,
+      message: null
+    });
+    
+  } catch (err) {
+    console.error('Render mixed quiz error:', err);
+    res.redirect('/home');
+  }
+});
+
+// Submit mixed quiz answers
+app.post('/quiz/mixed/submit', requireAuth, async (req, res) => {
+  try {
+    const { answers } = req.body;
+    
+    // Mark mixed quiz as completed for today
+    const today = new Date().toISOString().split('T')[0];
+    
+    await db.query(
+      'INSERT INTO Daily_Quiz_Completions (user_id, quiz_type, completed_date) VALUES ($1, $2, $3) ON CONFLICT (user_id, quiz_type, completed_date) DO NOTHING',
+      [req.session.user.id, 'mixed', today]
+    );
+    
+    // Mark words as asked if answers were provided
+    if (answers && Object.keys(answers).length > 0) {
+      const questionIds = Object.keys(answers).map(key => key.replace('answer_', ''));
+      if (questionIds.length > 0) {
+        await db.query(
+          'UPDATE Dictionary SET asked = true WHERE id = ANY($1) AND user_id = $2',
+          [questionIds, req.session.user.id]
+        );
+      }
+    }
+    
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Submit mixed quiz error:', err);
+    res.status(500).json({ error: 'Failed to submit mixed quiz' });
+  }
+});
+
+// Submit vocabulary quiz answers
+app.post('/quiz/vocabulary/submit', requireAuth, async (req, res) => {
+  try {
+    const { answers } = req.body;
+    
+    // Mark vocabulary quiz as completed for today
+    const today = new Date().toISOString().split('T')[0];
+    
+    await db.query(
+      'INSERT INTO Daily_Quiz_Completions (user_id, quiz_type, completed_date) VALUES ($1, $2, $3) ON CONFLICT (user_id, quiz_type, completed_date) DO NOTHING',
+      [req.session.user.id, 'vocabulary', today]
+    );
+    
+    // Only mark words as asked if actual answers were provided
+    if (answers && Object.keys(answers).length > 0) {
+      const questionIds = Object.keys(answers).map(key => key.replace('answer_', ''));
+      if (questionIds.length > 0) {
+        await db.query(
+          'UPDATE Dictionary SET asked = true WHERE id = ANY($1) AND user_id = $2',
+          [questionIds, req.session.user.id]
+        );
+      }
+    }
+    
+    // Check and unlock vocabulary achievements
+    await checkVocabularyAchievements(req.session.user.id);
+    
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Submit vocabulary quiz error:', err);
+    res.status(500).json({ error: 'submit_failed' });
+  }
+});
+
+// Mark correctly answered vocabulary words as asked
+app.post('/api/vocabulary/mark-correct-as-asked', requireAuth, async (req, res) => {
+  try {
+    const { wordIds } = req.body;
+    
+    if (!wordIds || !Array.isArray(wordIds) || wordIds.length === 0) {
+      return res.status(400).json({ error: 'No word IDs provided' });
+    }
+    
+    // Update the asked column to true for correctly answered words
+    await db.query(
+      'UPDATE Dictionary SET asked = true WHERE id = ANY($1) AND user_id = $2',
+      [wordIds, req.session.user.id]
+    );
+    
+    res.json({ success: true, updatedCount: wordIds.length });
+  } catch (err) {
+    console.error('Error marking vocabulary words as asked:', err);
+    res.status(500).json({ error: 'update_failed' });
+  }
+});
+
+// Check vocabulary answer with fuzzy matching
+app.post('/api/vocabulary/check-answer', requireAuth, async (req, res) => {
+  try {
+    const { wordId, userAnswer, direction } = req.body;
+    
+    // Get the word from database
+    const wordRes = await db.query(
+      'SELECT word, meaning FROM Dictionary WHERE id = $1 AND user_id = $2',
+      [wordId, req.session.user.id]
+    );
+    
+    if (wordRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Word not found' });
+    }
+    
+    const word = wordRes.rows[0];
+    let isCorrect;
+    
+    if (direction === 'ko-en') {
+      // Korean → English: Check English answer against meaning
+      isCorrect = checkVocabularyAnswer(userAnswer, word.meaning, word.word);
+    } else {
+      // English → Korean: Check Korean answer against word
+      isCorrect = checkVocabularyAnswer(userAnswer, word.word, word.meaning);
+    }
+    
+    res.json({ 
+      correct: isCorrect,
+      korean: word.word,
+      english: word.meaning
+    });
+  } catch (err) {
+    console.error('Check vocabulary answer error:', err);
+    res.status(500).json({ error: 'check_failed' });
+  }
+});
+
+// Fuzzy matching function for vocabulary answers
+function checkVocabularyAnswer(userAnswer, correctEnglish, correctKorean) {
+  if (!userAnswer || !correctEnglish) return false;
+  
+  const user = userAnswer.trim().toLowerCase();
+  const english = correctEnglish.trim().toLowerCase();
+  
+  // Check English answer (exact match or fuzzy)
+  if (fuzzyMatch(user, english)) return true;
+  
+  // Check multiple English definitions (separated by "; ")
+  const englishTranslations = english.split('; ').map(t => t.trim().toLowerCase());
+  for (const translation of englishTranslations) {
+    if (fuzzyMatch(user, translation)) return true;
+  }
+  
+  return false;
+}
+
+// Fuzzy matching with typo tolerance
+function fuzzyMatch(user, correct) {
+  if (user === correct) return true;
+  
+  // Allow 1 character difference (typo tolerance)
+  if (Math.abs(user.length - correct.length) <= 1) {
+    let differences = 0;
+    const maxLen = Math.max(user.length, correct.length);
+    
+    for (let i = 0; i < maxLen; i++) {
+      if (i >= user.length || i >= correct.length || user[i] !== correct[i]) {
+        differences++;
+        if (differences > 1) return false;
+      }
+    }
+    return differences <= 1;
+  }
+  
+  return false;
+}
 
 // Render Grammar Quiz
 app.get('/quiz/grammar', requireAuth, async (req, res) => {
@@ -1223,6 +1700,104 @@ app.get('/api/quiz/status/:type', requireAuth, async (req, res) => {
 });
 
 
+
+// GPT integration for mixed quiz grammar evaluation (higher token limit)
+app.post('/api/grammar/evaluate', requireAuth, async (req, res) => {
+  try {
+    const { answers, maxTokens = 10000 } = req.body;
+    
+    if (!answers || !Array.isArray(answers)) {
+      return res.status(400).json({ error: 'Invalid answers data' });
+    }
+
+    // Build prompt for GPT with higher token limit
+    let prompt = `You are an expert Korean language teacher evaluating multiple grammar rule applications. Your task is to objectively evaluate Korean sentences written by a student for different grammar rules. Be honest and critical - do not agree with everything. If there are mistakes, point them out clearly and provide corrections.
+
+IMPORTANT: Write your feedback primarily in ENGLISH. Only use Korean for:
+- The corrected Korean sentences
+- Korean grammar rule names when necessary
+- Korean examples
+
+Grammar Rules and Student Answers to evaluate:
+
+`;
+
+    answers.forEach((answer, index) => {
+      prompt += `${index + 1}. Grammar Rule: "${answer.ruleTitle}"
+   English Example: "${answer.englishExample}"
+   Student's Korean Answer: "${answer.koreanAnswer}"
+
+`;
+    });
+
+    prompt += `Please evaluate each answer objectively in ENGLISH:
+- If correct: Say "Correct" and briefly explain why it's good in English
+- If incorrect: Explain what's wrong in English and provide the correct Korean translation of the English example given
+- Be specific about grammar mistakes, vocabulary errors, or unnatural expressions
+- Keep each evaluation concise but thorough (2-3 sentences per answer)
+- Focus on the most important corrections and learning points
+
+Format each response as:
+[GRAMMAR RULE NAME]:
+1. Evaluation: [English explanation of what's right/wrong]
+
+2. Correction: [Correct Korean translation of the English example if needed]
+
+3. Explanation: [Brief English explanation of the grammar rule usage]
+
+IMPORTANT: 
+- Each evaluation must start with the grammar rule name in bold or clearly visible format
+- If the answer is wrong, provide the correct Korean translation of the English example that was given in the quiz
+- Use proper line breaks between numbered points for clarity
+
+Remember: Be objective and critical. Don't praise incorrect answers. Write feedback in English, corrections in Korean.`;
+
+    // Call OpenAI API with higher token limit
+    const feedback = await generateGrammarFeedbackWithGPT(prompt, maxTokens);
+    
+    if (feedback) {
+      // Parse the feedback into structured evaluations
+      const evaluations = answers.map((answer, index) => {
+        // Extract the relevant part of feedback for this rule
+        const ruleFeedback = extractRuleFeedback(feedback, answer.ruleTitle);
+        return {
+          ruleTitle: answer.ruleTitle,
+          englishExample: answer.englishExample,
+          koreanAnswer: answer.koreanAnswer,
+          evaluation: ruleFeedback || 'Evaluation not available'
+        };
+      });
+      
+      res.json({ evaluations, fullFeedback: feedback });
+    } else {
+      res.status(500).json({ error: 'Failed to generate feedback' });
+    }
+
+  } catch (err) {
+    console.error('Error evaluating mixed quiz grammar:', err);
+    res.status(500).json({ error: 'evaluation_failed' });
+  }
+});
+
+// Helper function to extract feedback for specific grammar rules
+function extractRuleFeedback(fullFeedback, ruleTitle) {
+  try {
+    // Look for the rule title in the feedback and extract the relevant section
+    const ruleIndex = fullFeedback.indexOf(ruleTitle);
+    if (ruleIndex === -1) return 'Evaluation not available';
+    
+    // Find the next rule or end of feedback
+    const nextRuleIndex = fullFeedback.indexOf('\n\n', ruleIndex);
+    if (nextRuleIndex === -1) {
+      return fullFeedback.substring(ruleIndex);
+    }
+    
+    return fullFeedback.substring(ruleIndex, nextRuleIndex).trim();
+  } catch (err) {
+    console.error('Error extracting rule feedback:', err);
+    return 'Evaluation not available';
+  }
+}
 
 // GPT integration for checking grammar quiz answers
 app.post('/api/grammar/check-answers', requireAuth, async (req, res) => {
