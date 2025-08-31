@@ -1253,33 +1253,61 @@ app.get('/quiz/mixed', requireAuth, async (req, res) => {
       ORDER BY activity_date DESC
     `, [userId]);
     
+    // Debug: Show raw dates from database
+    console.log('Raw activity dates from database:');
+    successfulDaysResult.rows.forEach((row, index) => {
+      console.log(`  ${index + 1}: ${row.activity_date} (raw) -> ${new Date(row.activity_date).toISOString().split('T')[0]} (processed)`);
+    });
+    
     const successfulDates = successfulDaysResult.rows.map(row => new Date(row.activity_date));
+    
+    // Debug: Show what the server thinks the current date is
+    const now = new Date();
+    console.log(`Server current time: ${now.toISOString()}`);
+    console.log(`Server current date: ${now.toISOString().split('T')[0]}`);
+    console.log(`Server local date: ${now.toLocaleDateString()}`);
     
     console.log(`Found ${successfulDates.length} successful days for user ${userId}`);
     
-    // Get dates for 1, 7, and 30 successful days ago
+    // Get dates for 1, 7, and 30 successful days ago (1/1/1 rule)
     let targetDates = [];
+    let dateLabels = [];
+    
+    // 1 successful day ago (yesterday)
     if (successfulDates.length >= 1) {
-      targetDates.push(successfulDates[0]); // 1 successful day ago
+      targetDates.push(successfulDates[0]); // Most recent successful day (yesterday)
+      dateLabels.push('1 day ago');
     }
+    
+    // 7 successful days ago (1 week ago)
     if (successfulDates.length >= 7) {
-      targetDates.push(successfulDates[6]); // 7 successful days ago
+      targetDates.push(successfulDates[6]); // 7th most recent successful day
+      dateLabels.push('7 days ago');
     }
+    
+    // 30 successful days ago (1 month ago)
     if (successfulDates.length >= 30) {
-      targetDates.push(successfulDates[29]); // 30 successful days ago
+      targetDates.push(successfulDates[29]); // 30th most recent successful day
+      dateLabels.push('30 days ago');
     }
     
-    // If we don't have enough successful days, fill with available ones
-    if (targetDates.length < 3) {
-      targetDates = successfulDates.slice(0, Math.min(3, successfulDates.length));
-    }
+    // If we don't have enough successful days, we can't provide a full 1/1/1 quiz
+    // Don't fill with random dates - this breaks the 1/1/1 rule
+    console.log(`1/1/1 Rule Status: ${targetDates.length === 3 ? 'Full quiz available' : 'Partial quiz available (${targetDates.length}/3 dates found)'}`);
     
-    // Format dates for SQL queries
-    const dateStrings = targetDates.map(date => date.toISOString().split('T')[0]);
+    // Format dates for SQL queries - use local timezone to avoid UTC conversion issues
+    const dateStrings = targetDates.map(date => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    });
     
     console.log(`Mixed quiz target dates for user ${userId}:`);
     console.log(`- Successful days found: ${successfulDates.length}`);
     console.log(`- Target dates: ${dateStrings.join(', ')}`);
+    console.log(`- Date labels: ${dateLabels.join(', ')}`);
+    console.log(`- 1/1/1 Rule: ${targetDates.length === 3 ? 'Full quiz available' : 'Partial quiz available'}`);
     
     // Get words added on these successful days
     let wordsResult;
@@ -1371,32 +1399,39 @@ app.get('/quiz/mixed', requireAuth, async (req, res) => {
       }))
     };
     
-    // If no questions found, provide fallback data for testing
+    // If no questions found, show proper message based on 1/1/1 rule
     if (formattedQuestions.length === 0 && grammarBlock.questions.length === 0) {
-      console.log('No real data found, using fallback sample data');
+      let message = '';
       
-      // Provide fallback sample data so frontend can display properly
-      const fallbackQuestions = [
-        direction === 'ko-en'
-          ? { id: 1, prompt: 'Translate to English: 학교', answer: 'school', direction: 'ko-en' }
-          : { id: 1, prompt: 'Translate to Korean: school', answer: '학교', direction: 'en-ko' },
-        direction === 'ko-en'
-          ? { id: 2, prompt: 'Translate to English: 사랑', answer: 'love', direction: 'ko-en' }
-          : { id: 2, prompt: 'Translate to Korean: love', answer: '사랑', direction: 'en-ko' }
-      ];
-      
-      const fallbackGrammar = {
-        questions: [
-          { id: 101, title: '는/은 topic particle', englishExample: 'As for me, I like coffee.' },
-          { id: 102, title: '에서/부터 location & start', englishExample: 'Start from the station.' },
-          { id: 103, title: 'ㄴ/는 모양이다', englishExample: 'It looks like it will rain.' }
-        ]
-      };
+      if (successfulDates.length === 0) {
+        message = 'No successful study days recorded yet. Study for at least 1 hour to unlock the 1/1/1 quiz!';
+      } else if (successfulDates.length === 1) {
+        message = `Only 1 successful study day recorded. Need at least 7 successful days to unlock the 1/1/1 quiz. You have ${successfulDates.length} successful day.`;
+      } else if (successfulDates.length < 7) {
+        message = `Only ${successfulDates.length} successful study days recorded. Need at least 7 successful days to unlock the 1/1/1 quiz.`;
+      } else if (successfulDates.length < 30) {
+        message = `Only ${successfulDates.length} successful study days recorded. Need at least 30 successful days to unlock the full 1/1/1 quiz.`;
+      }
       
       return res.render('MixedQuiz.ejs', { 
-        questions: fallbackQuestions, 
-        grammarBlock: fallbackGrammar,
-        message: `Using sample data - no content found from successful study days. You have ${successfulDates.length} successful days recorded. Study more to unlock real questions!`
+        questions: [], 
+        grammarBlock: { questions: [] },
+        message: message
+      });
+    }
+    
+    // If we have some questions but not all 3 target dates, show a message
+    if (targetDates.length < 3) {
+      const missingDates = [];
+      if (successfulDates.length < 7) missingDates.push('7 days ago');
+      if (successfulDates.length < 30) missingDates.push('30 days ago');
+      
+      const message = `Partial 1/1/1 quiz available. Missing data from: ${missingDates.join(', ')}. You have ${successfulDates.length} successful study days recorded.`;
+      
+      return res.render('MixedQuiz.ejs', { 
+        questions: formattedQuestions, 
+        grammarBlock,
+        message: message
       });
     }
     
