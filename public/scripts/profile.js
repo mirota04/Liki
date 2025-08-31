@@ -27,6 +27,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	// Future: fetch dynamic achievements/stats if needed.
 	// Placeholder for any interactive behaviors unique to profile.
+	
+	// Initialize chart functionality
+	initializeChart();
 
 	// Smooth scroll to sections (if anchors are added later)
 	document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -35,6 +38,23 @@ document.addEventListener('DOMContentLoaded', function() {
 			document.querySelector(this.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth' });
 		});
 	});
+	
+	// Chart initialization function
+	function initializeChart() {
+		const chartBars = document.querySelectorAll('.chart-bar');
+		console.log('Found chart bars:', chartBars.length);
+		
+		// Add hover effects and ensure visibility
+		chartBars.forEach(bar => {
+			const height = bar.style.height;
+			console.log('Chart bar height:', height);
+			
+			// Ensure minimum height for visibility
+			if (height && parseInt(height) < 8) {
+				bar.style.minHeight = '8px';
+			}
+		});
+	}
 });
 
 // Logout function

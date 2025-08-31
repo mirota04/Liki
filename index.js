@@ -606,17 +606,32 @@ app.get("/profile", requireAuth, async (req, res) => {
     const labels = [];
     const grammarCounts = new Array(7).fill(0);
     const vocabCounts = new Array(7).fill(0);
-    for (let i = 6; i >= 0; i--) {
+    
+    // Create labels from Monday to Sunday (more logical order)
+    for (let i = 0; i < 7; i++) {
       const d = new Date();
-      d.setDate(d.getDate() - (6 - i));
-      labels.push(d.toLocaleDateString('en-US', { weekday: 'short' }));
+      // Get Monday of current week and add days
+      const dayOfWeek = d.getDay();
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Sunday is 0, so we need -6
+      const monday = new Date(d);
+      monday.setDate(d.getDate() + mondayOffset);
+      
+      const currentDay = new Date(monday);
+      currentDay.setDate(monday.getDate() + i);
+      labels.push(currentDay.toLocaleDateString('en-US', { weekday: 'short' }));
     }
 
     const dayIndexMap = new Map();
     for (let i = 0; i < 7; i++) {
       const d = new Date();
-      d.setDate(d.getDate() - (6 - i));
-      const key = d.toISOString().slice(0, 10);
+      const dayOfWeek = d.getDay();
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const monday = new Date(d);
+      monday.setDate(d.getDate() + mondayOffset);
+      
+      const currentDay = new Date(monday);
+      currentDay.setDate(monday.getDate() + i);
+      const key = currentDay.toISOString().slice(0, 10);
       dayIndexMap.set(key, i);
     }
 
@@ -635,6 +650,15 @@ app.get("/profile", requireAuth, async (req, res) => {
     const vocabWeekTotal = vocabCounts.reduce((a, b) => a + b, 0);
     const activeDays = grammarCounts.map((c, i) => (c + vocabCounts[i]) > 0 ? 1 : 0).reduce((a, b) => a + b, 0);
     const peak = Math.max(1, ...grammarCounts, ...vocabCounts);
+    
+    // Debug logging
+    console.log('Profile chart data:', {
+      labels,
+      grammarCounts,
+      vocabCounts,
+      peak,
+      activeDays
+    });
 
     const achievements = [
       { title: 'First Step', description: 'Add your first item', unlocked: (grammarWeekTotal + vocabWeekTotal) >= 1 },

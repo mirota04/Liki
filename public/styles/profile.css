@@ -76,6 +76,38 @@
 	}
 }
 
+/* Chart bar styles */
+.chart-bar {
+	min-height: 8px;
+	transition: all 0.3s ease;
+	border-radius: 4px 4px 0 0;
+}
+
+.chart-bar:hover {
+	opacity: 0.9;
+	transform: scaleY(1.02);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure chart bars are visible even with small values */
+.chart-container .flex-1 > div {
+	min-height: 8px;
+}
+
+/* Better chart spacing and layout */
+.chart-container .flex-1 {
+	margin: 0 2px;
+}
+
+.chart-container .flex-1:first-child {
+	margin-left: 0;
+}
+
+.chart-container .flex-1:last-child {
+	margin-right: 0;
+}
+}
+
 /* Dark mode styles for profile page */
 [data-theme="dark"] .profile-card {
 	background-color: var(--card-bg);

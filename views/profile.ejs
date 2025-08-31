@@ -234,19 +234,37 @@
 				</div>
 
 				<!-- Weekly Chart -->
-				<div class="w-full">
-					<div class="flex items-end gap-2 h-40">
+				<div class="w-full chart-container">
+					<div class="flex items-end gap-4 h-40 px-2">
 						<% for (let i = 0; i < labels.length; i++) { %>
-						<div class="flex-1 flex items-end gap-1">
-							<div class="w-1/2 rounded-t" style="background: linear-gradient(180deg, rgba(95,131,150,0.7) 0%, rgba(95,131,150,0.2) 100%); height:<%= Math.round((grammarCounts[i] / peak) * 100) %>%"></div>
-							<div class="w-1/2 rounded-t" style="background: linear-gradient(180deg, rgba(47,74,97,0.7) 0%, rgba(47,74,97,0.2) 100%); height:<%= Math.round((vocabCounts[i] / peak) * 100) %>%"></div>
+						<div class="flex-1 flex items-end gap-2">
+							<div class="w-1/2 rounded-t bg-primary/70 hover:bg-primary transition-all duration-300 chart-bar shadow-sm" 
+								 style="height: <%= Math.max(8, Math.round((grammarCounts[i] / peak) * 120)) %>px;"
+								 title="Grammar: <%= grammarCounts[i] %>">
+							</div>
+							<div class="w-1/2 rounded-t bg-secondary/70 hover:bg-secondary transition-all duration-300 chart-bar shadow-sm" 
+								 style="height: <%= Math.max(8, Math.round((vocabCounts[i] / peak) * 120)) %>px;"
+								 title="Vocabulary: <%= vocabCounts[i] %>">
+							</div>
 						</div>
 						<% } %>
 					</div>
-					<div class="flex justify-between mt-2 text-xs text-warm">
+					<div class="flex justify-between mt-3 text-xs text-warm px-2">
 						<% labels.forEach(function(l){ %>
-						<span><%= l %></span>
+						<span class="font-medium"><%= l %></span>
 						<% }); %>
+					</div>
+					
+					<!-- Chart Legend -->
+					<div class="flex items-center justify-center gap-8 mt-6 text-xs">
+						<div class="flex items-center gap-2">
+							<div class="w-3 h-3 rounded bg-primary/70 shadow-sm"></div>
+							<span class="text-warm font-medium">Grammar</span>
+						</div>
+						<div class="flex items-center gap-2">
+							<div class="w-3 h-3 rounded bg-secondary/70 shadow-sm"></div>
+							<span class="text-warm font-medium">Vocabulary</span>
+						</div>
 					</div>
 				</div>
 			</section>
