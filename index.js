@@ -1447,6 +1447,26 @@ app.get('/quiz/mixed', requireAuth, async (req, res) => {
   }
 });
 
+// Render General Quiz
+app.get('/quiz/general', requireAuth, async (req, res) => {
+  try {
+    const mode = req.query.mode || 'words';
+    const direction = req.query.direction || 'en-ko';
+    
+    console.log(`General quiz requested: mode=${mode}, direction=${direction}`);
+    
+    res.render('GeneralQuiz.ejs', { 
+      mode,
+      direction,
+      message: null
+    });
+    
+  } catch (err) {
+    console.error('Render general quiz error:', err);
+    res.redirect('/home');
+  }
+});
+
 // Submit mixed quiz answers
 app.post('/quiz/mixed/submit', requireAuth, async (req, res) => {
   try {
@@ -1475,6 +1495,148 @@ app.post('/quiz/mixed/submit', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Submit mixed quiz error:', err);
     res.status(500).json({ error: 'Failed to submit mixed quiz' });
+  }
+ });
+
+// General Quiz API endpoints
+app.get('/api/general/check-availability', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const mode = req.query.mode || 'words';
+    
+    if (mode === 'words') {
+      // Check if user has at least 100 words
+      const wordsCount = await db.query(`
+        SELECT COUNT(*) as count
+        FROM Dictionary 
+        WHERE user_id = $1
+      `, [userId]);
+      
+      const available = wordsCount.rows[0].count >= 100;
+      res.json({ 
+        available, 
+        count: parseInt(wordsCount.rows[0].count),
+        required: 100,
+        mode: 'words'
+      });
+      
+    } else if (mode === 'grammar') {
+      // Check if user has at least 20 grammar rules
+      const grammarCount = await db.query(`
+        SELECT COUNT(*) as count
+        FROM Grammar 
+        WHERE user_id = $1
+      `, [userId]);
+      
+      const available = grammarCount.rows[0].count >= 20;
+      res.json({ 
+        available, 
+        count: parseInt(grammarCount.rows[0].count),
+        required: 20,
+        mode: 'grammar'
+      });
+      
+    } else {
+      res.status(400).json({ error: 'Invalid mode' });
+    }
+    
+  } catch (err) {
+    console.error('Error checking general quiz availability:', err);
+    res.status(500).json({ error: 'Failed to check availability' });
+  }
+});
+
+app.get('/api/general/words', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const direction = req.query.direction === 'ko-en' ? 'ko-en' : 'en-ko';
+    const count = parseInt(req.query.count) || 100;
+    
+    // Get random words from user's dictionary (regardless of asked value)
+    const wordsResult = await db.query(`
+      SELECT id, word, meaning, meaning_geo, created_at
+      FROM Dictionary 
+      WHERE user_id = $1 
+      ORDER BY RANDOM()
+      LIMIT $2
+    `, [userId, count]);
+    
+    // Format vocabulary questions based on direction
+    const formattedQuestions = wordsResult.rows.map((word, index) => {
+      if (direction === 'ko-en') {
+        // Korean → English: Show Korean word, expect English answer
+        return {
+          id: word.id,
+          prompt: `Translate to English: ${word.word}`,
+          answer: word.meaning,
+          korean: word.word,
+          georgian: word.meaning_geo,
+          direction: 'ko-en'
+        };
+      } else {
+        // English → Korean: Show English meaning, expect Korean answer
+        return {
+          id: word.id,
+          prompt: `Translate to Korean: ${word.meaning}`,
+          answer: word.word,
+          korean: word.word,
+          georgian: word.meaning_geo,
+          direction: 'en-ko'
+        };
+      }
+    });
+    
+    res.json({ questions: formattedQuestions });
+  } catch (err) {
+    console.error('Error fetching general quiz words:', err);
+    res.status(500).json({ error: 'Failed to fetch words' });
+  }
+});
+
+app.get('/api/general/grammar', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const count = parseInt(req.query.count) || 20;
+    
+    // Get random grammar rules from user's grammar table (regardless of asked value)
+    const grammarResult = await db.query(`
+      SELECT id, title, Eexample, created_at
+      FROM Grammar 
+      WHERE user_id = $1 
+      ORDER BY RANDOM()
+      LIMIT $2
+    `, [userId, count]);
+    
+    // For each grammar rule, fetch one random example from the Examples table
+    for (let rule of grammarResult.rows) {
+      try {
+        const exampleResult = await db.query(`
+          SELECT example1, example2, example3, example4, example5
+          FROM Examples 
+          WHERE id = $1
+        `, [rule.id]);
+        
+        if (exampleResult.rows.length > 0) {
+          const examples = exampleResult.rows[0];
+          // Pick one random example from the 5 available
+          const exampleKeys = ['example1', 'example2', 'example3', 'example4', 'example5'];
+          const randomKey = exampleKeys[Math.floor(Math.random() * exampleKeys.length)];
+          rule.englishExample = examples[randomKey] || rule.Eexample || 'No example available';
+        } else {
+          // Fallback to Eexample if no examples found
+          rule.englishExample = rule.Eexample || 'No example available';
+        }
+      } catch (err) {
+        console.error(`Error fetching examples for grammar rule ${rule.id}:`, err);
+        // Fallback to Eexample if there's an error
+        rule.englishExample = rule.Eexample || 'No example available';
+      }
+    }
+    
+    res.json({ questions: grammarResult.rows });
+  } catch (err) {
+    console.error('Error fetching general quiz grammar:', err);
+    res.status(500).json({ error: 'Failed to fetch grammar rules' });
   }
 });
 

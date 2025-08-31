@@ -808,8 +808,7 @@ document.addEventListener('DOMContentLoaded', function(){
 		const modeSelector = document.getElementById('quizModeSelector');
 		const modeWords = document.getElementById('modeWords');
 		const modeGrammar = document.getElementById('modeGrammar');
-		const modeBoth = document.getElementById('modeBoth');
-		let selectedMode = 'both';
+		let selectedMode = 'words'; // Default to words mode
 		
 		const vocabDirectionSelector = document.getElementById('vocabDirectionSelector');
 		const directionKoEn = document.getElementById('directionKoEn');
@@ -879,8 +878,17 @@ document.addEventListener('DOMContentLoaded', function(){
 			if (modeSelector) {
 				if (type === 'general') {
 					modeSelector.classList.remove('hidden');
-					selectedMode = 'both';
-					setModeButtonStyles('both');
+					selectedMode = 'words'; // Default to words mode
+					setModeButtonStyles('words');
+					// Show direction selector for words mode by default
+					if (vocabDirectionSelector) {
+						vocabDirectionSelector.classList.remove('hidden');
+						selectedDirection = 'en-ko'; // Default: English → Korean
+						setDirectionButtonStyles('en-ko');
+					}
+					
+					// Show availability info for general quiz
+					showGeneralQuizAvailability();
 				} else {
 					modeSelector.classList.add('hidden');
 				}
@@ -892,8 +900,19 @@ document.addEventListener('DOMContentLoaded', function(){
 					vocabDirectionSelector.classList.remove('hidden');
 					selectedDirection = 'en-ko'; // Default: English → Korean
 					setDirectionButtonStyles('en-ko');
-				} else {
+				} else if (type !== 'general') {
+					// Hide for other quiz types (grammar, etc.)
 					vocabDirectionSelector.classList.add('hidden');
+				}
+			}
+			
+			// Show availability info for general quiz
+			const availabilityEl = document.getElementById('generalQuizAvailability');
+			if (availabilityEl) {
+				if (type === 'general') {
+					availabilityEl.classList.remove('hidden');
+				} else {
+					availabilityEl.classList.add('hidden');
 				}
 			}
 
@@ -915,7 +934,7 @@ document.addEventListener('DOMContentLoaded', function(){
 					btnStart.disabled = false;
 					btnStart.className = 'px-6 py-3 btn-primary custom-text-white rounded-button font-medium';
 					btnStart.textContent = 'Start Quiz';
-					btnStart.onclick = () => {
+					btnStart.onclick = async () => {
 						// Navigate based on type
 						if (lastOpenedType === 'grammar') {
 							window.location.href = '/quiz/grammar';
@@ -923,6 +942,30 @@ document.addEventListener('DOMContentLoaded', function(){
 							window.location.href = `/quiz/vocabulary?direction=${selectedDirection}`;
 						} else if (lastOpenedType === 'mixed') {
 							window.location.href = `/quiz/mixed?direction=${selectedDirection}`;
+						} else if (lastOpenedType === 'general') {
+							// Check availability for general quiz before allowing
+							try {
+								const response = await fetch(`/api/general/check-availability?mode=${selectedMode}`);
+								if (!response.ok) throw new Error('Failed to check availability');
+								
+								const data = await response.json();
+								
+								if (data.available) {
+									// For general quiz, include mode and direction
+									const generalUrl = `/quiz/general?mode=${selectedMode}`;
+									if (selectedMode === 'words') {
+										window.location.href = `${generalUrl}&direction=${selectedDirection}`;
+									} else {
+										window.location.href = generalUrl;
+									}
+								} else {
+									// Show error message
+									alert(`Not enough ${selectedMode === 'words' ? 'words' : 'grammar rules'} available. You need at least ${selectedMode === 'words' ? '100' : '20'} ${selectedMode === 'words' ? 'words' : 'grammar rules'} to take this quiz.`);
+								}
+							} catch (err) {
+								console.error('Error checking availability:', err);
+								alert('Error checking quiz availability. Please try again.');
+							}
 						} else {
 							// For other types keep modal behavior for now
 							closeModal();
@@ -941,7 +984,6 @@ document.addEventListener('DOMContentLoaded', function(){
 			}
 			setBtn(modeWords, mode === 'words');
 			setBtn(modeGrammar, mode === 'grammar');
-			setBtn(modeBoth, mode === 'both');
 		}
 		
 		function setDirectionButtonStyles(direction){
@@ -955,13 +997,64 @@ document.addEventListener('DOMContentLoaded', function(){
 			setBtn(directionEnKo, direction === 'en-ko');
 		}
 
-		if (modeWords) modeWords.addEventListener('click', () => { selectedMode = 'words'; setModeButtonStyles('words'); });
-		if (modeGrammar) modeGrammar.addEventListener('click', () => { selectedMode = 'grammar'; setModeButtonStyles('grammar'); });
-		if (modeBoth) modeBoth.addEventListener('click', () => { selectedMode = 'both'; setModeButtonStyles('both'); });
+		if (modeWords) modeWords.addEventListener('click', () => { 
+			selectedMode = 'words'; 
+			setModeButtonStyles('words');
+			// Show direction selector for words mode
+			if (vocabDirectionSelector) {
+				vocabDirectionSelector.classList.remove('hidden');
+			}
+			// Update availability info when switching modes
+			if (lastOpenedType === 'general') {
+				showGeneralQuizAvailability();
+			}
+		});
+		if (modeGrammar) modeGrammar.addEventListener('click', () => { 
+			selectedMode = 'grammar'; 
+			setModeButtonStyles('grammar');
+			// Hide direction selector for grammar mode
+			if (vocabDirectionSelector) {
+				vocabDirectionSelector.classList.add('hidden');
+			}
+			// Update availability info when switching modes
+			if (lastOpenedType === 'general') {
+				showGeneralQuizAvailability();
+			}
+		});
 		
 		if (directionKoEn) directionKoEn.addEventListener('click', () => { selectedDirection = 'ko-en'; setDirectionButtonStyles('ko-en'); });
 		if (directionEnKo) directionEnKo.addEventListener('click', () => { selectedDirection = 'en-ko'; setDirectionButtonStyles('en-ko'); });
 
+		async function showGeneralQuizAvailability() {
+			try {
+				const response = await fetch(`/api/general/check-availability?mode=${selectedMode}`);
+				if (!response.ok) throw new Error('Failed to check availability');
+				
+				const data = await response.json();
+				const availabilityEl = document.getElementById('generalQuizAvailability');
+				
+				if (availabilityEl) {
+					if (data.available) {
+						availabilityEl.innerHTML = `
+							<div class="text-sm text-green-600 bg-green-50 px-3 py-2 rounded-lg">
+								<i class="ri-check-line mr-1"></i>
+								Available: ${data.count}/${data.required} ${data.mode === 'words' ? 'words' : 'grammar rules'}
+							</div>
+						`;
+					} else {
+						availabilityEl.innerHTML = `
+							<div class="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+								<i class="ri-exclamation-line mr-1"></i>
+								Not enough ${data.mode === 'words' ? 'words' : 'grammar rules'}: ${data.count}/${data.required}
+							</div>
+						`;
+					}
+				}
+			} catch (err) {
+				console.error('Error showing availability:', err);
+			}
+		}
+		
 		function closeModal(){
 			if (!modal) return;
 			modal.classList.add('hidden');

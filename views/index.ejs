@@ -453,10 +453,9 @@
                         <!-- General quiz mode selector -->
             <div id="quizModeSelector" class="mt-4 hidden">
               <div class="text-sm font-medium text-dark mb-2">Choose focus</div>
-              <div class="grid grid-cols-3 gap-2">
+              <div class="grid grid-cols-2 gap-2">
                 <button id="modeWords" class="px-3 py-2 rounded-button bg-gray-100 text-dark text-sm">Words</button>
                 <button id="modeGrammar" class="px-3 py-2 rounded-button bg-gray-100 text-dark text-sm">Grammar</button>
-                <button id="modeBoth" class="px-3 py-2 rounded-button custom-bg-primary custom-text-white text-sm">Both</button>
               </div>
             </div>
             
@@ -468,6 +467,12 @@
                 <button id="directionEnKo" class="px-3 py-2 rounded-button custom-bg-primary custom-text-white text-sm">English → Korean</button>
               </div>
             </div>
+            
+            <!-- General quiz availability info -->
+            <div id="generalQuizAvailability" class="mt-4 hidden">
+              <!-- Availability info will be populated by JavaScript -->
+            </div>
+            
             <div class="mt-6 flex items-center justify-end space-x-3">
                 <button id="quizLandingCancel" class="px-4 py-2 rounded-button text-sm text-dark hover:bg-gray-100">Cancel</button>
                 <button id="quizLandingStart" class="btn-primary custom-text-white px-5 py-2.5 !rounded-button font-semibold text-sm">Start Quiz</button>
