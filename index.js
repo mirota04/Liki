@@ -8,7 +8,7 @@ import { parseStringPromise } from 'xml2js';
 import session from 'express-session';
 
 const app = express();
-const port = process.env.PORT;
+const port = process.env.PORT || 3000;
 const saltRounds = 10;
 env.config();
 
@@ -653,14 +653,43 @@ function requireAuth(req, res, next) {
   next();
 }
 
-const db = new pg.Client({
-  user: process.env.PG_USER,
-  host: process.env.PG_HOST,
-  database: process.env.PG_DATABASE,
-  password: process.env.PG_PASSWORD,
-  port: process.env.PG_PORT,
-});
-db.connect();
+// Database connection configuration
+let dbConfig;
+
+if (process.env.DATABASE_URL) {
+  // Use DATABASE_URL for Heroku/Neon production
+  dbConfig = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false
+    }
+  };
+} else {
+  // Use individual environment variables for local development
+  dbConfig = {
+    user: process.env.PG_USER,
+    host: process.env.PG_HOST,
+    database: process.env.PG_DATABASE,
+    password: process.env.PG_PASSWORD,
+    port: process.env.PG_PORT || 5432,
+  };
+}
+
+const db = new pg.Client(dbConfig);
+
+db.connect()
+  .then(() => {
+    console.log(' Database connected successfully!');
+    if (process.env.DATABASE_URL) {
+      console.log(' Using production database (Neon/Heroku)');
+    } else {
+      console.log(' Using local database');
+    }
+  })
+  .catch(err => {
+    console.error(' Database connection failed:', err);
+    process.exit(1);
+  });
 
 app.get("/", (req, res) => {
   res.render("login.ejs");
