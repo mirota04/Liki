@@ -693,10 +693,19 @@ function requireAuth(req, res, next) {
 }
 
 // Database connection configuration
+console.log('=== DATABASE CONFIG DEBUG ===');
+console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+console.log('PG_USER exists:', !!process.env.PG_USER);
+console.log('PG_HOST exists:', !!process.env.PG_HOST);
+console.log('PG_DATABASE exists:', !!process.env.PG_DATABASE);
+console.log('PG_PASSWORD exists:', !!process.env.PG_PASSWORD);
+console.log('PG_PORT exists:', !!process.env.PG_PORT);
+
 let dbConfig;
 
 if (process.env.DATABASE_URL) {
   // Use DATABASE_URL for Heroku/Neon production
+  console.log('Using DATABASE_URL for production');
   dbConfig = {
     connectionString: process.env.DATABASE_URL,
     ssl: {
@@ -705,6 +714,7 @@ if (process.env.DATABASE_URL) {
   };
 } else {
   // Use individual environment variables for local development
+  console.log('Using local database config');
   dbConfig = {
     user: process.env.PG_USER,
     host: process.env.PG_HOST,
@@ -713,6 +723,9 @@ if (process.env.DATABASE_URL) {
     port: process.env.PG_PORT || 5432,
   };
 }
+
+console.log('Final dbConfig:', JSON.stringify(dbConfig, null, 2));
+console.log('=== END DATABASE CONFIG DEBUG ===');
 
 const db = new pg.Client(dbConfig);
 
