@@ -8,7 +8,7 @@ import { parseStringPromise } from 'xml2js';
 import session from 'express-session';
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT;
 const saltRounds = 10;
 env.config();
 
