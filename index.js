@@ -727,11 +727,34 @@ console.log('Final dbConfig:', JSON.stringify({
 }, null, 2));
 console.log('=== END DATABASE CONNECTION DEBUG ===');
 
-const db = new pg.Client(dbConfig);
+// Use connection pool instead of single client for better reliability
+const db = new pg.Pool({
+  ...dbConfig,
+  max: 20, // Maximum number of clients in the pool
+  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
+  connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
+});
 
-// Add error event listener
+// Add error event listener with reconnection logic
 db.on('error', (err) => {
   console.error('Database client error:', err);
+  if (err.code === 'ECONNRESET' || err.code === 'ENOTFOUND' || err.message.includes('terminated')) {
+    console.log('Connection lost, attempting to reconnect in 5 seconds...');
+    setTimeout(() => {
+      db.connect().catch(connectErr => {
+        console.error('Reconnection failed:', connectErr);
+      });
+    }, 5000);
+  }
+});
+
+// Add connection event listeners
+db.on('connect', () => {
+  console.log('Database client connected');
+});
+
+db.on('end', () => {
+  console.log('Database client disconnected');
 });
 
 db.connect()
@@ -747,14 +770,19 @@ db.connect()
     console.error(' Database connection failed:', err);
     console.error(' Error code:', err.code);
     console.error(' Error message:', err.message);
-    console.error(' Error stack:', err.stack);
     
-    // Don't exit immediately, give more info
-    console.error('=== CONNECTION FAILURE ANALYSIS ===');
-    console.error('This error suggests the app is trying to connect to localhost instead of Neon.');
-    console.error('Check if DATABASE_URL is properly set in Heroku config vars.');
-    console.error('Current DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
-    console.error('=====================================');
+    if (err.code === 'ECONNREFUSED') {
+      console.error('=== CONNECTION REFUSED ANALYSIS ===');
+      console.error('This error suggests the app is trying to connect to localhost instead of Neon.');
+      console.error('Check if DATABASE_URL is properly set in Heroku config vars.');
+      console.error('Current DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
+      console.error('=====================================');
+    } else if (err.message.includes('terminated')) {
+      console.error('=== CONNECTION TERMINATED ANALYSIS ===');
+      console.error('Connection was established but terminated unexpectedly.');
+      console.error('This might be due to SSL issues or database server problems.');
+      console.error('=====================================');
+    }
     
     process.exit(1);
   });
