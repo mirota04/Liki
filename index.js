@@ -8,7 +8,7 @@ import { parseStringPromise } from 'xml2js';
 import session from 'express-session';
 
 const app = express();
-const port = process.env.PORT;
+const port = process.env.PORT || 3000;
 const saltRounds = 10;
 env.config();
 
@@ -635,31 +635,34 @@ const ACHIEVEMENT_TEMPLATE_USER_ID = Number(process.env.ACHIEVEMENT_TEMPLATE_USE
 async function seedDefaultAchievementsForUser(userId) {
   try {
     const rows = [
-      ['Grammar Junior','Complete 30 grammar questions','📚'],
-      ['Grammar Master','Complete 70 grammar questions','🎓'],
-      ['Vocabulary Junior','Complete 70 vocabulary questions','📖'],
-      ['Vocabulary Master','Complete 150 vocabulary questions','🏆'],
-      ['Consistent Learner','Maintain a 15-day streak','⏱️'],
-      ['Dedication','Maintain a 30-day streak','💎'],
-      ['Grammar Builder','Add 80 grammar rules','🏗️'],
-      ['Vocabulary Builder','Add 300 vocabulary words','📚'],
-      ['Fast Learner','Complete 7 daily challenges','⚡'],
-      ['On Fire','Add 50+ words in one day','🔥'],
-      ['Quiz Junior','Complete 50 quizzes','🎯'],
-      ['Quiz Master','Complete 100 quizzes','🥇'],
-      ['Impossible','Perfect score on general quiz','🚀'],
-      ['YOU ARE READY','Unlock all achievements and complete all items','✅']
+      ['Grammar Junior','Complete 30 grammar questions','ri-medal-line'],
+      ['Grammar Master','Complete 70 grammar questions','ri-trophy-line'],
+      ['Vocabulary Junior','Complete 70 vocabulary questions','ri-medal-line'],
+      ['Vocabulary Master','Complete 150 vocabulary questions','ri-trophy-line'],
+      ['Consistent Learner','Maintain a 15-day streak','ri-calendar-2-line'],
+      ['Dedication','Maintain a 30-day streak','ri-diamond-line'],
+      ['Grammar Builder','Add 80 grammar rules','ri-quill-pen-ai-line'],
+      ['Vocabulary Builder','Add 300 vocabulary words','ri-quill-pen-ai-line'],
+      ['Fast Learner','Complete 7 daily challenges','ri-brain-line'],
+      ['On Fire','Add 50+ words in one day','ri-meteor-line'],
+      ['Quiz Junior','Complete 50 quizzes','ri-medal-line'],
+      ['Quiz Master','Complete 100 quizzes','ri-trophy-line'],
+      ['Impossible','Perfect score on general quiz','ri-vip-crown-2-line'],
+      ['YOU ARE READY','Unlock all achievements and complete all items','ri-open-arm-line']
     ];
-    const valuesSql = rows.map((_, i) => `($${i*5+1}, $${i*5+2}, $${i*5+3}, false, $${i*5+5})`).join(',');
-    const params = [];
-    rows.forEach(([title, desc, icon]) => {
-      params.push(title, desc, icon, false, userId);
-    });
-    // We provided a placeholder for status above but we enforce false in SQL too
+    const placeholders = rows
+      .map((_, i) => {
+        const base = i * 4;
+        return `($${base + 1}, $${base + 2}, $${base + 3}, false, $${base + 4})`;
+      })
+      .join(', ');
+
+    const params = rows.flatMap(([title, desc, icon]) => [title, desc, icon, userId]);
+
     await db.query(
       `INSERT INTO Achievements (title, description, icon, status, user_id)
-       VALUES ${rows.map(() => '( $1, $2, $3, false, $4 )').join(', ')}`,
-      rows.flatMap(([title, desc, icon]) => [title, desc, icon, userId])
+       VALUES ${placeholders}`,
+      params
     );
     console.log(`Seeded default achievements for user ${userId}`);
   } catch (err) {
