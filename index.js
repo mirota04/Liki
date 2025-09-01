@@ -735,31 +735,10 @@ const db = new pg.Pool({
   connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
 });
 
-// Add error event listener with reconnection logic
-db.on('error', (err) => {
-  console.error('Database client error:', err);
-  if (err.code === 'ECONNRESET' || err.code === 'ENOTFOUND' || err.message.includes('terminated')) {
-    console.log('Connection lost, attempting to reconnect in 5 seconds...');
-    setTimeout(() => {
-      db.connect().catch(connectErr => {
-        console.error('Reconnection failed:', connectErr);
-      });
-    }, 5000);
-  }
-});
-
-// Add connection event listeners
-db.on('connect', () => {
-  console.log('Database client connected');
-});
-
-db.on('end', () => {
-  console.log('Database client disconnected');
-});
-
-db.connect()
+// Test the connection pool
+db.query('SELECT NOW()')
   .then(() => {
-    console.log(' Database connected successfully!');
+    console.log(' Database pool connected successfully!');
     if (process.env.DATABASE_URL) {
       console.log(' Using production database (Neon/Heroku)');
     } else {
@@ -767,7 +746,7 @@ db.connect()
     }
   })
   .catch(err => {
-    console.error(' Database connection failed:', err);
+    console.error(' Database pool connection failed:', err);
     console.error(' Error code:', err.code);
     console.error(' Error message:', err.message);
     
