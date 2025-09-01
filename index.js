@@ -138,19 +138,21 @@ async function checkGrammarAchievements(userId) {
     // Check for Grammar Junior achievement (30 answered questions)
     if (answeredCount >= 30) {
       await db.query(
-        'UPDATE achievements SET status = true WHERE user_id = $1 AND title = $2',
+        'UPDATE Achievements SET status = true WHERE user_id = $1 AND title = $2',
         [userId, 'Grammar Junior']
       );
       console.log(`User ${userId} unlocked Grammar Junior achievement!`);
+      await checkYouAreReadyAchievement(userId);
     }
     
     // Check for Grammar Master achievement (70 answered questions)
     if (answeredCount >= 70) {
       await db.query(
-        'UPDATE achievements SET status = true WHERE user_id = $1 AND title = $2',
+        'UPDATE Achievements SET status = true WHERE user_id = $1 AND title = $2',
         [userId, 'Grammar Master']
       );
       console.log(`User ${userId} unlocked Grammar Master achievement!`);
+      await checkYouAreReadyAchievement(userId);
     }
     
   } catch (err) {
@@ -169,26 +171,461 @@ async function checkVocabularyAchievements(userId) {
     
     const answeredCount = parseInt(countResult.rows[0].count);
     
-    // Check for Vocabulary Junior achievement (50 answered questions)
-    if (answeredCount >= 50) {
+    // Check for Vocabulary Junior achievement (70 answered questions)
+    if (answeredCount >= 70) {
       await db.query(
-        'UPDATE achievements SET status = true WHERE user_id = $1 AND title = $2',
+        'UPDATE Achievements SET status = true WHERE user_id = $1 AND title = $2',
         [userId, 'Vocabulary Junior']
       );
       console.log(`User ${userId} unlocked Vocabulary Junior achievement!`);
+      await checkYouAreReadyAchievement(userId);
     }
     
-    // Check for Vocabulary Master achievement (100 answered questions)
-    if (answeredCount >= 100) {
+    // Check for Vocabulary Master achievement (150 answered questions)
+    if (answeredCount >= 150) {
       await db.query(
-        'UPDATE achievements SET status = true WHERE user_id = $1 AND title = $2',
+        'UPDATE Achievements SET status = true WHERE user_id = $1 AND title = $2',
         [userId, 'Vocabulary Master']
       );
       console.log(`User ${userId} unlocked Vocabulary Master achievement!`);
+      await checkYouAreReadyAchievement(userId);
     }
     
   } catch (err) {
     console.error('Error checking vocabulary achievements:', err);
+  }
+}
+
+// Check and unlock streak-based achievements
+async function checkStreakAchievements(userId) {
+  try {
+    // Get current streak from User_Streak table
+    const streakResult = await db.query(
+      'SELECT current_streak FROM User_Streak WHERE user_id = $1',
+      [userId]
+    );
+    
+    const currentStreak = parseInt(streakResult.rows?.[0]?.current_streak || 0);
+    
+    // Check for Consistent Learner achievement (15 day streak)
+    if (currentStreak >= 15) {
+      await db.query(
+        'UPDATE Achievements SET status = true WHERE user_id = $1 AND title = $2',
+        [userId, 'Consistent Learner']
+      );
+      console.log(`User ${userId} unlocked Consistent Learner achievement!`);
+      await checkYouAreReadyAchievement(userId);
+    }
+    
+    // Check for Dedication achievement (30 day streak)
+    if (currentStreak >= 30) {
+      await db.query(
+        'UPDATE Achievements SET status = true WHERE user_id = $1 AND title = $2',
+        [userId, 'Dedication']
+      );
+      console.log(`User ${userId} unlocked Dedication achievement!`);
+      await checkYouAreReadyAchievement(userId);
+    }
+    
+  } catch (err) {
+    console.error('Error checking streak achievements:', err);
+  }
+}
+
+// Check and unlock builder achievements based on total items
+async function checkBuilderAchievements(userId) {
+  try {
+    // Count total grammar rules for the user
+    const grammarCountResult = await db.query(
+      'SELECT COUNT(*) as count FROM Grammar WHERE user_id = $1',
+      [userId]
+    );
+    const totalGrammar = parseInt(grammarCountResult.rows[0].count);
+    
+    // Count total vocabulary words for the user
+    const vocabCountResult = await db.query(
+      'SELECT COUNT(*) as count FROM Dictionary WHERE user_id = $1',
+      [userId]
+    );
+    const totalVocab = parseInt(vocabCountResult.rows[0].count);
+    
+    // Check for Grammar Builder achievement (80+ total grammar rules)
+    if (totalGrammar >= 80) {
+      await db.query(
+        'UPDATE Achievements SET status = true WHERE user_id = $1 AND title = $2',
+        [userId, 'Grammar Builder']
+      );
+      console.log(`User ${userId} unlocked Grammar Builder achievement!`);
+      await checkYouAreReadyAchievement(userId);
+    }
+    
+    // Check for Vocabulary Builder achievement (300+ total words)
+    if (totalVocab >= 300) {
+      await db.query(
+        'UPDATE Achievements SET status = true WHERE user_id = $1 AND title = $2',
+        [userId, 'Vocabulary Builder']
+      );
+      console.log(`User ${userId} unlocked Vocabulary Builder achievement!`);
+      await checkYouAreReadyAchievement(userId);
+    }
+    
+  } catch (err) {
+    console.error('Error checking builder achievements:', err);
+  }
+}
+
+// Check and unlock Fast Learner achievement based on daily challenge completions
+async function checkFastLearnerAchievement(userId) {
+  try {
+    // Get current_number from Daily_Challenges table
+    const challengeResult = await db.query(
+      'SELECT current_number FROM Daily_Challenges WHERE user_id = $1',
+      [userId]
+    );
+    
+    const currentNumber = parseInt(challengeResult.rows?.[0]?.current_number || 0);
+    
+    // Check for Fast Learner achievement (7+ daily challenges at 100%)
+    if (currentNumber >= 7) {
+      await db.query(
+        'UPDATE Achievements SET status = true WHERE user_id = $1 AND title = $2',
+        [userId, 'Fast Learner']
+      );
+      console.log(`User ${userId} unlocked Fast Learner achievement!`);
+      await checkYouAreReadyAchievement(userId);
+    }
+    
+  } catch (err) {
+    console.error('Error checking Fast Learner achievement:', err);
+  }
+}
+
+// Check and update daily challenges completion
+async function checkDailyChallengesCompletion(userId) {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Check all 6 daily challenge requirements
+    const [
+      grammarQuizRes,
+      vocabQuizRes,
+      mixedQuizRes,
+      grammarCountRes,
+      vocabCountRes,
+      timeRes
+    ] = await Promise.all([
+      // 1. Daily Grammar Quiz completed
+      db.query(
+        'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = $3',
+        [userId, 'grammar', today]
+      ),
+      // 2. Daily Vocabulary Quiz completed
+      db.query(
+        'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = $3',
+        [userId, 'vocabulary', today]
+      ),
+      // 3. 1/1/1 Quiz completed
+      db.query(
+        'SELECT id FROM Daily_Quiz_Completions WHERE user_id = $1 AND quiz_type = $2 AND completed_date = $3',
+        [userId, 'mixed', today]
+      ),
+      // 4. 3+ Grammar Rules added today
+      db.query(
+        'SELECT COUNT(*) as count FROM Grammar WHERE user_id = $1 AND created_at::date = $2',
+        [userId, today]
+      ),
+      // 5. 20+ Words added today
+      db.query(
+        'SELECT COUNT(*) as count FROM Dictionary WHERE user_id = $1 AND created_at::date = $2',
+        [userId, today]
+      ),
+      // 6. 2+ hours spent today
+      db.query(
+        'SELECT active_seconds FROM User_Activity WHERE user_id = $1 AND activity_date = $2',
+        [userId, today]
+      )
+    ]);
+    
+    // Check if all challenges are completed
+    const grammarQuizCompleted = grammarQuizRes.rows.length > 0;
+    const vocabQuizCompleted = vocabQuizRes.rows.length > 0;
+    const mixedQuizCompleted = mixedQuizRes.rows.length > 0;
+    const grammarCount = parseInt(grammarCountRes.rows[0]?.count || 0);
+    const vocabCount = parseInt(vocabCountRes.rows[0]?.count || 0);
+    const activeSeconds = parseInt(timeRes.rows[0]?.active_seconds || 0);
+    const activeHours = activeSeconds / 3600;
+    
+    // All 6 challenges completed (100% daily completion)
+    if (grammarQuizCompleted && vocabQuizCompleted && mixedQuizCompleted && 
+        grammarCount >= 3 && vocabCount >= 20 && activeHours >= 2) {
+      
+      // Get or create Daily_Challenges record
+      let challengeRecord = await db.query(
+        'SELECT id, current_number FROM Daily_Challenges WHERE user_id = $1',
+        [userId]
+      );
+      
+      if (challengeRecord.rows.length === 0) {
+        // Create new record
+        await db.query(
+          'INSERT INTO Daily_Challenges (user_id, current_number) VALUES ($1, 1)',
+          [userId]
+        );
+        console.log(`User ${userId} completed first daily challenge!`);
+      } else {
+        // Increment existing record
+        const currentNumber = parseInt(challengeRecord.rows[0].current_number || 0);
+        await db.query(
+          'UPDATE Daily_Challenges SET current_number = $1 WHERE user_id = $2',
+          [currentNumber + 1, userId]
+        );
+        console.log(`User ${userId} completed daily challenge! Total: ${currentNumber + 1}`);
+      }
+      
+      // Check for Fast Learner achievement
+      await checkFastLearnerAchievement(userId);
+      
+      // Check for YOU ARE READY achievement
+      await checkYouAreReadyAchievement(userId);
+    }
+    
+  } catch (err) {
+    console.error('Error checking daily challenges completion:', err);
+  }
+}
+
+// Check and unlock On Fire achievement based on daily vocabulary additions
+async function checkOnFireAchievement(userId) {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Count how many words the user added today
+    const vocabCountResult = await db.query(
+      'SELECT COUNT(*) as count FROM Dictionary WHERE user_id = $1 AND created_at::date = $2',
+      [userId, today]
+    );
+    
+    const todayVocabCount = parseInt(vocabCountResult.rows[0]?.count || 0);
+    
+    // Check for On Fire achievement (50+ words added today)
+    if (todayVocabCount >= 50) {
+      await db.query(
+        'UPDATE Achievements SET status = true WHERE user_id = $1 AND title = $2',
+        [userId, 'On Fire']
+      );
+      console.log(`User ${userId} unlocked On Fire achievement! Added ${todayVocabCount} words today!`);
+      await checkYouAreReadyAchievement(userId);
+    }
+    
+  } catch (err) {
+    console.error('Error checking On Fire achievement:', err);
+  }
+}
+
+// Check and unlock quiz-based achievements
+async function checkQuizAchievements(userId) {
+  try {
+    // Get current quiz count from Quiz_Count table
+    const quizCountResult = await db.query(
+      'SELECT count FROM Quiz_Count WHERE user_id = $1',
+      [userId]
+    );
+    
+    const quizCount = parseInt(quizCountResult.rows?.[0]?.count || 0);
+    
+    // Check for Quiz Junior achievement (50+ quizzes completed)
+    if (quizCount >= 50) {
+      await db.query(
+        'UPDATE Achievements SET status = true WHERE user_id = $1 AND title = $2',
+        [userId, 'Quiz Junior']
+      );
+      console.log(`User ${userId} unlocked Quiz Junior achievement! Completed ${quizCount} quizzes!`);
+      await checkYouAreReadyAchievement(userId);
+    }
+    
+    // Check for Quiz Master achievement (100+ quizzes completed)
+    if (quizCount >= 100) {
+      await db.query(
+        'UPDATE Achievements SET status = true WHERE user_id = $1 AND title = $2',
+        [userId, 'Quiz Master']
+      );
+      console.log(`User ${userId} unlocked Quiz Master achievement! Completed ${quizCount} quizzes!`);
+      await checkYouAreReadyAchievement(userId);
+    }
+    
+  } catch (err) {
+    console.error('Error checking quiz achievements:', err);
+  }
+}
+
+// Increment quiz count for a user
+async function incrementQuizCount(userId) {
+  try {
+    // Get or create Quiz_Count record
+    let quizCountRecord = await db.query(
+      'SELECT id, count FROM Quiz_Count WHERE user_id = $1',
+      [userId]
+    );
+    
+    if (quizCountRecord.rows.length === 0) {
+      // Create new record
+      await db.query(
+        'INSERT INTO Quiz_Count (user_id, count) VALUES ($1, 1)',
+        [userId]
+      );
+      console.log(`User ${userId} completed first quiz! Total: 1`);
+    } else {
+      // Increment existing record
+      const currentCount = parseInt(quizCountRecord.rows[0].count || 0);
+      await db.query(
+        'UPDATE Quiz_Count SET count = $1 WHERE user_id = $2',
+        [currentCount + 1, userId]
+      );
+      console.log(`User ${userId} completed quiz! Total: ${currentCount + 1}`);
+    }
+    
+    // Check for quiz achievements after incrementing
+    await checkQuizAchievements(userId);
+    
+  } catch (err) {
+    console.error('Error incrementing quiz count:', err);
+  }
+}
+
+// Check and unlock Impossible achievement for perfect general quiz (words mode)
+async function checkImpossibleAchievement(userId, quizType, answers, totalQuestions) {
+  try {
+    // Only check for general quiz in words mode
+    if (quizType !== 'general-words') {
+      return;
+    }
+    
+    // Check if all 100 questions were answered correctly
+    if (answers && Object.keys(answers).length === totalQuestions) {
+      // Count how many answers are correct
+      let correctCount = 0;
+      
+      for (const [questionId, userAnswer] of Object.entries(answers)) {
+        // Get the correct answer from the database
+        const wordResult = await db.query(
+          'SELECT word, meaning FROM Dictionary WHERE id = $1 AND user_id = $2',
+          [questionId, userId]
+        );
+        
+        if (wordResult.rows.length > 0) {
+          const word = wordResult.rows[0];
+          // Check if answer is correct (using fuzzy matching)
+          const isCorrect = checkVocabularyAnswer(userAnswer, word.meaning, word.word);
+          if (isCorrect) {
+            correctCount++;
+          }
+        }
+      }
+      
+      // If all 100 questions are correct, unlock Impossible achievement
+      if (correctCount === totalQuestions && totalQuestions >= 100) {
+        await db.query(
+          'UPDATE Achievements SET status = true WHERE user_id = $1 AND title = $2',
+          [userId, 'Impossible']
+        );
+        console.log(`User ${userId} unlocked Impossible achievement! Perfect score on general quiz: ${correctCount}/${totalQuestions}!`);
+        await checkYouAreReadyAchievement(userId);
+      }
+    }
+    
+  } catch (err) {
+    console.error('Error checking Impossible achievement:', err);
+  }
+}
+
+// Submit general quiz results and check achievements
+app.post('/api/general/submit', requireAuth, async (req, res) => {
+  try {
+    const { quizType, answers, totalQuestions } = req.body;
+    const userId = req.session.user.id;
+    
+    // Check for Impossible achievement (perfect score on general words quiz)
+    if (quizType === 'words') {
+      await checkImpossibleAchievement(userId, 'general-words', answers, totalQuestions);
+    }
+    
+    // Increment quiz count for general quiz completion
+    await incrementQuizCount(userId);
+    
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Submit general quiz error:', err);
+    res.status(500).json({ error: 'submit_failed' });
+  }
+});
+
+// Check and unlock YOU ARE READY achievement (all achievements + all items asked = true)
+async function checkYouAreReadyAchievement(userId) {
+  try {
+    // First check if all achievements are unlocked
+    const achievementsResult = await db.query(
+      'SELECT title FROM Achievements WHERE user_id = $1 AND status = true',
+      [userId]
+    );
+    
+    const unlockedAchievements = achievementsResult.rows.map(row => row.title);
+    
+    // Check if all required achievements are unlocked
+    const requiredAchievements = [
+      'Grammar Junior',
+      'Grammar Master', 
+      'Vocabulary Junior',
+      'Vocabulary Master',
+      'Consistent Learner',
+      'Dedication',
+      'Grammar Builder',
+      'Vocabulary Builder',
+      'Fast Learner',
+      'On Fire',
+      'Quiz Junior',
+      'Quiz Master',
+      'Impossible'
+    ];
+    
+    const allAchievementsUnlocked = requiredAchievements.every(achievement => 
+      unlockedAchievements.includes(achievement)
+    );
+    
+    if (!allAchievementsUnlocked) {
+      return; // Not all achievements unlocked yet
+    }
+    
+    // Check if all grammar rules have asked = true
+    const grammarResult = await db.query(
+      'SELECT COUNT(*) as total, COUNT(CASE WHEN asked = true THEN 1 END) as asked FROM Grammar WHERE user_id = $1',
+      [userId]
+    );
+    
+    const totalGrammar = parseInt(grammarResult.rows[0].total);
+    const askedGrammar = parseInt(grammarResult.rows[0].asked);
+    const allGrammarAsked = totalGrammar > 0 && totalGrammar === askedGrammar;
+    
+    // Check if all vocabulary words have asked = true
+    const vocabResult = await db.query(
+      'SELECT COUNT(*) as total, COUNT(CASE WHEN asked = true THEN 1 END) as asked FROM Dictionary WHERE user_id = $1',
+      [userId]
+    );
+    
+    const totalVocab = parseInt(vocabResult.rows[0].total);
+    const askedVocab = parseInt(vocabResult.rows[0].asked);
+    const allVocabAsked = totalVocab > 0 && totalVocab === askedVocab;
+    
+    // If all achievements unlocked AND all items asked = true, unlock YOU ARE READY
+    if (allAchievementsUnlocked && allGrammarAsked && allVocabAsked) {
+      await db.query(
+        'UPDATE Achievements SET status = true WHERE user_id = $1 AND title = $2',
+        [userId, 'YOU ARE READY']
+      );
+      console.log(`🎉 User ${userId} unlocked YOU ARE READY achievement! All achievements unlocked and all items completed! 🎉`);
+    }
+    
+  } catch (err) {
+    console.error('Error checking YOU ARE READY achievement:', err);
   }
 }
 
@@ -240,6 +677,21 @@ app.get("/home", async (req, res) => {
     let dailyChallenges = null;
 
     if (userId) {
+      // Check for achievements before fetching them
+      await checkGrammarAchievements(userId);
+      await checkVocabularyAchievements(userId);
+      await checkStreakAchievements(userId);
+      await checkBuilderAchievements(userId);
+      await checkFastLearnerAchievement(userId);
+      await checkOnFireAchievement(userId);
+      await checkQuizAchievements(userId);
+      
+      // Check daily challenges completion
+      await checkDailyChallengesCompletion(userId);
+      
+      // Check for YOU ARE READY achievement (all achievements + all items asked = true)
+      await checkYouAreReadyAchievement(userId);
+      
       const recentQuery = `
         SELECT id, title, description, icon, status
         FROM achievements
@@ -467,6 +919,12 @@ app.post("/grammar", async (req, res) => {
       }
     }
 
+    // Check for builder achievements after adding new grammar rule
+    await checkBuilderAchievements(req.session.user.id);
+    
+    // Check for YOU ARE READY achievement
+    await checkYouAreReadyAchievement(req.session.user.id);
+
     res.redirect('/grammar');
   } catch (err) {
     console.error('Error inserting grammar:', err);
@@ -534,6 +992,15 @@ app.post("/vocabulary", requireAuth, async (req, res) => {
     const insertQuery = "INSERT INTO Dictionary (word, meaning, meaning_geo, user_id) VALUES ($1, $2, $3, $4) RETURNING id";
     const result = await db.query(insertQuery, [word, meaning, meaning_geo || null, userId]);
     
+    // Check for builder achievements after adding new vocabulary word
+    await checkBuilderAchievements(userId);
+    
+    // Check for On Fire achievement after adding new vocabulary word
+    await checkOnFireAchievement(userId);
+    
+    // Check for YOU ARE READY achievement
+    await checkYouAreReadyAchievement(userId);
+    
     res.json({ success: true, id: result.rows[0].id });
   } catch (err) {
     console.error('Error inserting vocabulary:', err);
@@ -594,6 +1061,21 @@ app.get("/profile", requireAuth, async (req, res) => {
       db.query(weekVocabQuery, [user.id])
     ]);
 
+    // Check for achievements before fetching them
+    await checkGrammarAchievements(user.id);
+    await checkVocabularyAchievements(user.id);
+    await checkStreakAchievements(user.id);
+    await checkBuilderAchievements(user.id);
+    await checkFastLearnerAchievement(user.id);
+    await checkOnFireAchievement(user.id);
+    await checkQuizAchievements(user.id);
+    
+    // Check daily challenges completion
+    await checkDailyChallengesCompletion(user.id);
+    
+    // Check for YOU ARE READY achievement (all achievements + all items asked = true)
+    await checkYouAreReadyAchievement(user.id);
+    
     // Fetch user achievements from DB
     const userAchievementsRes = await db.query(
       `SELECT title, description, icon, status
@@ -930,6 +1412,12 @@ app.post('/api/activity/heartbeat', requireAuth, async (req, res) => {
          WHERE user_id = $2`,
         [nextStreak, userId]
       );
+      
+      // Check for streak-based achievements
+      await checkStreakAchievements(userId);
+      
+      // Check for YOU ARE READY achievement
+      await checkYouAreReadyAchievement(userId);
     }
 
     // Return summary
@@ -998,6 +1486,12 @@ app.get('/api/streak', requireAuth, async (req, res) => {
           [userId]
         );
         currentStreak = 0;
+        
+        // Check for streak-based achievements (even when resetting, in case user had achievements)
+        await checkStreakAchievements(userId);
+        
+        // Check for YOU ARE READY achievement
+        await checkYouAreReadyAchievement(userId);
       }
     }
 
@@ -1023,7 +1517,7 @@ app.get('/api/achievements/count', requireAuth, async (req, res) => {
     
     const result = await db.query(
       `SELECT COUNT(*) as count
-       FROM achievements
+       FROM Achievements
        WHERE user_id = $1 AND status = true`,
       [userId]
     );
@@ -1515,6 +2009,12 @@ app.post('/quiz/mixed/submit', requireAuth, async (req, res) => {
       }
     }
     
+    // Increment quiz count and check achievements
+    await incrementQuizCount(req.session.user.id);
+    
+    // Check for YOU ARE READY achievement
+    await checkYouAreReadyAchievement(req.session.user.id);
+    
     res.json({ success: true });
   } catch (err) {
     console.error('Submit mixed quiz error:', err);
@@ -1690,6 +2190,12 @@ app.post('/quiz/vocabulary/submit', requireAuth, async (req, res) => {
     
     // Check and unlock vocabulary achievements
     await checkVocabularyAchievements(req.session.user.id);
+    
+    // Increment quiz count and check achievements
+    await incrementQuizCount(req.session.user.id);
+    
+    // Check for YOU ARE READY achievement
+    await checkYouAreReadyAchievement(req.session.user.id);
     
     res.json({ success: true });
   } catch (err) {
@@ -1891,8 +2397,14 @@ app.post('/quiz/grammar/submit', requireAuth, async (req, res) => {
       );
     }
     
-    // Check and unlock grammar achievements
-    await checkGrammarAchievements(req.session.user.id);
+              // Check and unlock grammar achievements
+          await checkGrammarAchievements(req.session.user.id);
+          
+          // Increment quiz count and check achievements
+          await incrementQuizCount(req.session.user.id);
+          
+          // Check for YOU ARE READY achievement
+          await checkYouAreReadyAchievement(req.session.user.id);
     
     res.json({ success: true });
   } catch (err) {

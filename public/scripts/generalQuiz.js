@@ -326,10 +326,31 @@
       }
     });
 
-    function finishVocabularyQuiz() {
+    async function finishVocabularyQuiz() {
       const correctCount = Array.from(answers.values()).filter(v => v.correct).length;
       const totalCount = questions.length;
       const percentage = Math.round((correctCount / totalCount) * 100);
+
+      // Submit quiz results to backend for achievement checking
+      try {
+        // Convert answers Map to object for submission
+        const answersObj = {};
+        for (const [questionId, answerData] of answers.entries()) {
+          answersObj[questionId] = answerData.given;
+        }
+
+        await fetch('/api/general/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            quizType: 'words',
+            answers: answersObj,
+            totalQuestions: totalCount
+          })
+        });
+      } catch (err) {
+        console.error('Error submitting quiz results:', err);
+      }
 
       const mainContent = document.querySelector('main');
       mainContent.innerHTML = `
