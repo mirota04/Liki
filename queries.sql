@@ -95,6 +95,22 @@ CREATE TABLE Daily_Quiz_Completions (
     UNIQUE (user_id, quiz_type, completed_date)
 );
 
+-- Daily Challange tracking
+DROP TABLE IF EXISTS Daily_Challenges;
+CREATE TABLE Daily_Challenges (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
+    current_number INT DEFAULT 0
+);
+
+-- Quiz Counter
+DROP TABLE IF EXISTS Quiz_Count;
+CREATE TABLE Quiz_Count (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
+    count INT DEFAULT 0
+);
+
 -- Helpful indexes
 CREATE INDEX IF NOT EXISTS idx_user_activity_user_date ON User_Activity (user_id, activity_date);
 CREATE INDEX IF NOT EXISTS idx_user_activity_user ON User_Activity (user_id);

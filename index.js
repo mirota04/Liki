@@ -8,7 +8,7 @@ import { parseStringPromise } from 'xml2js';
 import session from 'express-session';
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT;
 const saltRounds = 10;
 env.config();
 
@@ -631,6 +631,42 @@ async function checkYouAreReadyAchievement(userId) {
 
 const ACHIEVEMENT_TEMPLATE_USER_ID = Number(process.env.ACHIEVEMENT_TEMPLATE_USER_ID || 3);
 
+// Insert default achievements directly for a specific user (fallback seeding)
+async function seedDefaultAchievementsForUser(userId) {
+  try {
+    const rows = [
+      ['Grammar Junior','Complete 30 grammar questions','📚'],
+      ['Grammar Master','Complete 70 grammar questions','🎓'],
+      ['Vocabulary Junior','Complete 70 vocabulary questions','📖'],
+      ['Vocabulary Master','Complete 150 vocabulary questions','🏆'],
+      ['Consistent Learner','Maintain a 15-day streak','⏱️'],
+      ['Dedication','Maintain a 30-day streak','💎'],
+      ['Grammar Builder','Add 80 grammar rules','🏗️'],
+      ['Vocabulary Builder','Add 300 vocabulary words','📚'],
+      ['Fast Learner','Complete 7 daily challenges','⚡'],
+      ['On Fire','Add 50+ words in one day','🔥'],
+      ['Quiz Junior','Complete 50 quizzes','🎯'],
+      ['Quiz Master','Complete 100 quizzes','🥇'],
+      ['Impossible','Perfect score on general quiz','🚀'],
+      ['YOU ARE READY','Unlock all achievements and complete all items','✅']
+    ];
+    const valuesSql = rows.map((_, i) => `($${i*5+1}, $${i*5+2}, $${i*5+3}, false, $${i*5+5})`).join(',');
+    const params = [];
+    rows.forEach(([title, desc, icon]) => {
+      params.push(title, desc, icon, false, userId);
+    });
+    // We provided a placeholder for status above but we enforce false in SQL too
+    await db.query(
+      `INSERT INTO Achievements (title, description, icon, status, user_id)
+       VALUES ${rows.map(() => '( $1, $2, $3, false, $4 )').join(', ')}`,
+      rows.flatMap(([title, desc, icon]) => [title, desc, icon, userId])
+    );
+    console.log(`Seeded default achievements for user ${userId}`);
+  } catch (err) {
+    console.error('Error seeding default achievements:', err);
+  }
+}
+
 // Set up EJS as the view engine
 app.set('view engine', 'ejs');
 app.set('views', './views');
@@ -743,16 +779,20 @@ app.get("/home", async (req, res) => {
       if (!hasAchievements) {
         // Seed achievements for existing user who doesn't have any
         try {
-          await db.query(
+          const copyRes = await db.query(
             `INSERT INTO achievements (title, description, icon, status, user_id)
              SELECT title, description, icon, false AS status, $1 AS user_id
              FROM achievements
              WHERE user_id = $2`,
             [userId, ACHIEVEMENT_TEMPLATE_USER_ID]
           );
+          if ((copyRes.rowCount || 0) === 0) {
+            await seedDefaultAchievementsForUser(userId);
+          }
           console.log(`Seeded achievements for existing user ${userId}`);
         } catch (seedErr) {
           console.error('Error seeding achievements for existing user:', seedErr);
+          await seedDefaultAchievementsForUser(userId);
         }
       }
 
@@ -1318,15 +1358,20 @@ app.post("/register", async (req, res) => {
 
           // Seed achievements for the new user by copying from a template user
           try {
-            await db.query(
+            const copyRes = await db.query(
               `INSERT INTO achievements (title, description, icon, status, user_id)
                SELECT title, description, icon, false AS status, $1 AS user_id
                FROM achievements
                WHERE user_id = $2`,
               [newUserId, ACHIEVEMENT_TEMPLATE_USER_ID]
             );
+            if ((copyRes.rowCount || 0) === 0) {
+              await seedDefaultAchievementsForUser(newUserId);
+            }
           } catch (seedErr) {
             console.error('Error seeding achievements for new user:', seedErr);
+            // Fallback to direct seeding
+            await seedDefaultAchievementsForUser(newUserId);
           }
 
           console.log(`New user registered: ${username}`);
