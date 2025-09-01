@@ -693,28 +693,25 @@ function requireAuth(req, res, next) {
 }
 
 // Database connection configuration
-console.log('=== DATABASE CONFIG DEBUG ===');
-console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
-console.log('PG_USER exists:', !!process.env.PG_USER);
-console.log('PG_HOST exists:', !!process.env.PG_HOST);
-console.log('PG_DATABASE exists:', !!process.env.PG_DATABASE);
-console.log('PG_PASSWORD exists:', !!process.env.PG_PASSWORD);
-console.log('PG_PORT exists:', !!process.env.PG_PORT);
+console.log('=== DATABASE CONNECTION DEBUG ===');
+console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'EXISTS' : 'NOT SET');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('PORT:', process.env.PORT);
 
 let dbConfig;
 
+// Force use of DATABASE_URL if it exists (Heroku/Neon)
 if (process.env.DATABASE_URL) {
-  // Use DATABASE_URL for Heroku/Neon production
-  console.log('Using DATABASE_URL for production');
+  console.log('Using DATABASE_URL for production connection');
   dbConfig = {
     connectionString: process.env.DATABASE_URL,
     ssl: {
       rejectUnauthorized: false
     }
   };
+  console.log('Connection string host:', process.env.DATABASE_URL.split('@')[1]?.split('/')[0]);
 } else {
-  // Use individual environment variables for local development
-  console.log('Using local database config');
+  console.log('Using local database configuration');
   dbConfig = {
     user: process.env.PG_USER,
     host: process.env.PG_HOST,
@@ -724,10 +721,18 @@ if (process.env.DATABASE_URL) {
   };
 }
 
-console.log('Final dbConfig:', JSON.stringify(dbConfig, null, 2));
-console.log('=== END DATABASE CONFIG DEBUG ===');
+console.log('Final dbConfig:', JSON.stringify({
+  ...dbConfig,
+  password: dbConfig.password ? '[HIDDEN]' : undefined
+}, null, 2));
+console.log('=== END DATABASE CONNECTION DEBUG ===');
 
 const db = new pg.Client(dbConfig);
+
+// Add error event listener
+db.on('error', (err) => {
+  console.error('Database client error:', err);
+});
 
 db.connect()
   .then(() => {
@@ -740,6 +745,17 @@ db.connect()
   })
   .catch(err => {
     console.error(' Database connection failed:', err);
+    console.error(' Error code:', err.code);
+    console.error(' Error message:', err.message);
+    console.error(' Error stack:', err.stack);
+    
+    // Don't exit immediately, give more info
+    console.error('=== CONNECTION FAILURE ANALYSIS ===');
+    console.error('This error suggests the app is trying to connect to localhost instead of Neon.');
+    console.error('Check if DATABASE_URL is properly set in Heroku config vars.');
+    console.error('Current DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
+    console.error('=====================================');
+    
     process.exit(1);
   });
 
