@@ -4,7 +4,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="icon" type="image/png" href="/images/Picture2.png">
-	<title>Liki - Vocabulary</title>
+	<title>Liki3 - Vocabulary</title>
 
 	<!-- External CSS -->
 	<script src="https://cdn.tailwindcss.com/3.4.16"></script>
@@ -191,6 +191,90 @@
 						<p class="text-warm">Search for Korean words and add them to build your personal vocabulary collection</p>
 					</div>
 				<% } %>
+			</div>
+		</div>
+
+		<!-- Flashcards Section -->
+		<div id="flashcards-section" class="flashcards-section rounded-2xl p-4 sm:p-6 max-w-7xl mx-auto px-4 sm:px-6 mt-6 sm:mt-8">
+			<div class="flex items-center justify-between mb-6">
+				<h3 class="text-xl font-semibold text-dark">Today's Flashcards</h3>
+				<div class="flex items-center gap-4">
+					<!-- Direction Switch -->
+					<div class="flex items-center bg-gray-100 rounded-lg p-1">
+						<button id="directionEnKo" class="direction-btn active px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 bg-white text-primary shadow-sm">
+							English → Korean
+						</button>
+						<button id="directionKoEn" class="direction-btn px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 text-gray-600 hover:text-gray-800">
+							Korean → English
+						</button>
+					</div>
+					<button id="startFlashcards" class="btn-primary custom-text-white px-4 sm:px-6 py-2.5 sm:py-3 !rounded-button font-medium whitespace-nowrap text-sm sm:text-base">
+						<i class="ri-play-line mr-2"></i>
+						<span class="hidden sm:inline">Start Flashcards</span>
+					</button>
+				</div>
+			</div>
+
+			<!-- Flashcard Container -->
+			<div id="flashcard-container" class="hidden">
+				<!-- Progress Info -->
+				<div class="text-center mb-6">
+					<div class="text-sm text-warm mb-2">
+						<span id="current-card">1</span> of <span id="total-cards">0</span> cards
+					</div>
+					<div class="w-full bg-gray-200 rounded-full h-2">
+						<div id="progress-bar" class="bg-primary h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+					</div>
+				</div>
+
+				<!-- Card -->
+				<div class="flashcard-wrapper flex justify-center mb-8">
+					<div id="flashcard" class="flashcard">
+						<div class="flashcard-inner">
+							<div class="flashcard-front">
+								<div id="card-front-text" class="card-text"></div>
+								<div class="card-hint">Tap to reveal answer</div>
+							</div>
+							<div class="flashcard-back">
+								<div id="card-back-text" class="card-text"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Action Buttons -->
+				<div class="flex justify-center gap-4">
+					<button id="btn-wrong" class="action-btn wrong-btn">
+						<i class="ri-close-line mr-2"></i>
+						Wrong
+					</button>
+					<button id="btn-correct" class="action-btn correct-btn">
+						<i class="ri-check-line mr-2"></i>
+						Correct
+					</button>
+				</div>
+			</div>
+
+			<!-- Empty State -->
+			<div id="flashcards-empty" class="text-center py-12">
+				<div class="w-16 h-16 flex items-center justify-center bg-gray-100 rounded-full mx-auto mb-4">
+					<i class="ri-flashlight-line text-gray-400 ri-2x"></i>
+				</div>
+				<h4 class="text-lg font-medium text-dark mb-2">No Words Added Today</h4>
+				<p class="text-warm">Add some Korean words to your dictionary today to start practicing with flashcards</p>
+			</div>
+
+			<!-- Completion State -->
+			<div id="flashcards-complete" class="hidden text-center py-12">
+				<div class="w-16 h-16 flex items-center justify-center bg-green-100 rounded-full mx-auto mb-4">
+					<i class="ri-check-line text-green-500 ri-2x"></i>
+				</div>
+				<h4 class="text-lg font-medium text-dark mb-2">Great Job!</h4>
+				<p class="text-warm mb-4">You've completed all today's flashcards correctly</p>
+				<button id="restart-flashcards" class="btn-primary custom-text-white px-6 py-3 !rounded-button font-medium">
+					<i class="ri-refresh-line mr-2"></i>
+					Practice Again
+				</button>
 			</div>
 		</div>
 	</main>

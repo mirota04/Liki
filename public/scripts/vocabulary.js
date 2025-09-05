@@ -427,5 +427,257 @@ document.addEventListener('DOMContentLoaded', function() {
 			showNotification('Word removed from dictionary', 'success');
 		});
 	});
+
+	// Flashcards functionality
+	const flashcardsSection = document.getElementById('flashcards-section');
+	const flashcardContainer = document.getElementById('flashcard-container');
+	const flashcardsEmpty = document.getElementById('flashcards-empty');
+	const flashcardsComplete = document.getElementById('flashcards-complete');
+	const startFlashcardsBtn = document.getElementById('startFlashcards');
+	const directionEnKo = document.getElementById('directionEnKo');
+	const directionKoEn = document.getElementById('directionKoEn');
+	const flashcard = document.getElementById('flashcard');
+	const cardFrontText = document.getElementById('card-front-text');
+	const cardBackText = document.getElementById('card-back-text');
+	const currentCardSpan = document.getElementById('current-card');
+	const totalCardsSpan = document.getElementById('total-cards');
+	const progressBar = document.getElementById('progress-bar');
+	const btnWrong = document.getElementById('btn-wrong');
+	const btnCorrect = document.getElementById('btn-correct');
+	const restartFlashcardsBtn = document.getElementById('restart-flashcards');
+
+	let flashcards = [];
+	let currentCardIndex = 0;
+	let currentDirection = 'en-ko'; // 'en-ko' or 'ko-en'
+	let remainingCards = [];
+	let isFlipped = false;
+
+	// Initialize flashcards on page load
+	loadTodaysWords();
+
+	async function loadTodaysWords() {
+		try {
+			const response = await fetch('/api/flashcards/today');
+			const data = await response.json();
+			
+			if (data.success && data.words.length > 0) {
+				flashcards = data.words;
+				showFlashcardsSection();
+			} else {
+				showEmptyState();
+			}
+		} catch (error) {
+			console.error('Error loading today\'s words:', error);
+			showEmptyState();
+		}
+	}
+
+	function showFlashcardsSection() {
+		flashcardsEmpty.classList.add('hidden');
+		flashcardsComplete.classList.add('hidden');
+		flashcardsSection.classList.remove('hidden');
+	}
+
+	function showEmptyState() {
+		flashcardsEmpty.classList.remove('hidden');
+		flashcardContainer.classList.add('hidden');
+		flashcardsComplete.classList.add('hidden');
+	}
+
+	function showCompleteState() {
+		flashcardContainer.classList.add('hidden');
+		flashcardsComplete.classList.remove('hidden');
+	}
+
+	function startFlashcardSession() {
+		// Shuffle the flashcards array for randomization
+		remainingCards = [...flashcards].sort(() => Math.random() - 0.5);
+		currentCardIndex = 0;
+		isFlipped = false;
+		
+		flashcardContainer.classList.remove('hidden');
+		flashcardsEmpty.classList.add('hidden');
+		flashcardsComplete.classList.add('hidden');
+		
+		updateProgress();
+		loadCurrentCard();
+	}
+
+	function loadCurrentCard() {
+		if (remainingCards.length === 0) {
+			showCompleteState();
+			return;
+		}
+
+		const card = remainingCards[currentCardIndex];
+		isFlipped = false;
+		flashcard.classList.remove('flipped', 'entering');
+		
+		// Set card content based on direction
+		if (currentDirection === 'en-ko') {
+			cardFrontText.textContent = card.meaning;
+			cardBackText.textContent = card.word;
+		} else {
+			cardFrontText.textContent = card.word;
+			cardBackText.textContent = card.meaning;
+		}
+
+		// Add entrance animation
+		setTimeout(() => {
+			flashcard.classList.add('entering');
+		}, 50);
+	}
+
+	function flipCard() {
+		if (isFlipped) return;
+		
+		isFlipped = true;
+		flashcard.classList.add('flipped');
+	}
+
+	function nextCard(isCorrect) {
+		if (remainingCards.length === 0) return;
+
+		const card = remainingCards[currentCardIndex];
+
+		// Remove card from remaining cards if correct
+		if (isCorrect) {
+			remainingCards.splice(currentCardIndex, 1);
+		} else {
+			// Move to next card but keep current card in the deck
+			// Shuffle remaining cards to randomize order, but avoid repeating the same word
+			shuffleRemainingCardsAvoidingLast(card);
+		}
+
+		// Reset card state and load next
+		flashcard.classList.remove('flipped', 'entering');
+		updateProgress();
+		loadCurrentCard();
+	}
+
+	function shuffleRemainingCards() {
+		// Shuffle the remaining cards to randomize order
+		remainingCards = remainingCards.sort(() => Math.random() - 0.5);
+		currentCardIndex = 0;
+	}
+
+	function shuffleRemainingCardsAvoidingLast(avoidWord) {
+		// Shuffle remaining cards but ensure the avoided word doesn't come first
+		if (remainingCards.length <= 1) return;
+		
+		// Find the index of the word to avoid
+		const avoidIndex = remainingCards.findIndex(card => 
+			card.word === avoidWord.word && card.meaning === avoidWord.meaning
+		);
+		
+		if (avoidIndex === -1) {
+			// Word not found, just shuffle normally
+			shuffleRemainingCards();
+			return;
+		}
+		
+		// Shuffle until the avoided word is not in the first position
+		let attempts = 0;
+		do {
+			remainingCards = remainingCards.sort(() => Math.random() - 0.5);
+			attempts++;
+		} while (remainingCards[0].word === avoidWord.word && 
+				 remainingCards[0].meaning === avoidWord.meaning && 
+				 attempts < 10); // Prevent infinite loop
+		
+		currentCardIndex = 0;
+	}
+
+	function updateProgress() {
+		const total = flashcards.length;
+		const completed = total - remainingCards.length;
+		const current = currentCardIndex + 1;
+		
+		currentCardSpan.textContent = current;
+		totalCardsSpan.textContent = remainingCards.length;
+		
+		const progress = (completed / total) * 100;
+		progressBar.style.width = `${progress}%`;
+	}
+
+	function setDirection(direction) {
+		currentDirection = direction;
+		
+		// Update button states
+		directionEnKo.classList.toggle('active', direction === 'en-ko');
+		directionKoEn.classList.toggle('active', direction === 'ko-en');
+		
+		// Reload current card with new direction
+		if (flashcardContainer && !flashcardContainer.classList.contains('hidden')) {
+			loadCurrentCard();
+		}
+	}
+
+	// Event listeners
+	if (startFlashcardsBtn) {
+		startFlashcardsBtn.addEventListener('click', startFlashcardSession);
+	}
+
+	if (directionEnKo) {
+		directionEnKo.addEventListener('click', () => setDirection('en-ko'));
+	}
+
+	if (directionKoEn) {
+		directionKoEn.addEventListener('click', () => setDirection('ko-en'));
+	}
+
+	if (flashcard) {
+		flashcard.addEventListener('click', flipCard);
+	}
+
+	if (btnWrong) {
+		btnWrong.addEventListener('click', () => nextCard(false));
+	}
+
+	if (btnCorrect) {
+		btnCorrect.addEventListener('click', () => nextCard(true));
+	}
+
+	if (restartFlashcardsBtn) {
+		restartFlashcardsBtn.addEventListener('click', startFlashcardSession);
+	}
+
+	// Simple click to flip card
+	if (flashcard) {
+		flashcard.addEventListener('click', flipCard);
+	}
+
+	// Keyboard support
+	document.addEventListener('keydown', (e) => {
+		if (flashcardContainer.classList.contains('hidden')) return;
+
+		switch(e.key) {
+			case ' ':
+			case 'Enter':
+				e.preventDefault();
+				if (isFlipped) {
+					nextCard(true); // Space/Enter = correct
+				} else {
+					flipCard();
+				}
+				break;
+			case 'ArrowLeft':
+				e.preventDefault();
+				if (isFlipped) {
+					nextCard(false); // Left arrow = wrong
+				}
+				break;
+			case 'ArrowRight':
+				e.preventDefault();
+				if (isFlipped) {
+					nextCard(true); // Right arrow = correct
+				}
+				break;
+			case 'Escape':
+				e.preventDefault();
+				flashcardContainer.classList.add('hidden');
+				break;
+		}
+	});
 });
 

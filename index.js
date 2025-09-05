@@ -1083,6 +1083,27 @@ app.get("/api/dictionary", requireAuth, async (req, res) => {
   }
 });
 
+// Get today's words for flashcards
+app.get("/api/flashcards/today", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    
+    const query = `
+      SELECT word, meaning, meaning_geo 
+      FROM Dictionary 
+      WHERE user_id = $1 
+        AND DATE(created_at) = CURRENT_DATE
+      ORDER BY created_at DESC
+    `;
+    
+    const result = await db.query(query, [userId]);
+    res.json({ success: true, words: result.rows });
+  } catch (err) {
+    console.error('Error fetching today\'s words:', err);
+    res.status(500).json({ success: false, error: 'Failed to fetch today\'s words' });
+  }
+});
+
 app.post("/vocabulary", requireAuth, async (req, res) => {
   try {
     const { word, meaning, meaning_geo } = req.body;
