@@ -1984,7 +1984,7 @@ app.get('/quiz/mixed', requireAuth, async (req, res) => {
         FROM Dictionary 
         WHERE user_id = $1 
         AND DATE(created_at) = ANY($2)
-        ORDER BY created_at DESC
+        ORDER BY RANDOM()
       `, [userId, dateStrings]);
     } else {
       wordsResult = { rows: [] };

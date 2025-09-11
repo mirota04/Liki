@@ -232,6 +232,19 @@
       renderProgress();
     }
 
+    // Enter key: submit first, then after evaluation advance to next (words mode only)
+    if (answerInput) {
+      answerInput.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const q = questions[current];
+        const state = q ? answers.get(q.id) : null;
+        if (state && state.checked) {
+          e.preventDefault();
+          if (!btnNext.disabled) btnNext.click();
+        }
+      });
+    }
+
     answerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const q = questions[current];

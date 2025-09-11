@@ -146,6 +146,7 @@
       btnNext.textContent = 'Finish';
       btnNext.className = 'px-5 py-3 rounded-lg bg-green-500 hover:bg-green-600 text-white font-medium transition-colors';
       btnNext.disabled = false; // Ensure it's enabled
+      console.log('Last question - Finish button enabled');
     } else {
       btnNext.textContent = 'Next';
       btnNext.className = 'px-5 py-3 rounded-lg btn-primary custom-text-white font-medium';
@@ -154,6 +155,21 @@
 
     renderDots();
     renderProgress();
+  }
+
+  // Enter key: submit first, then after evaluation advance to next
+  if (answerInput) {
+    answerInput.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const q = questions[current];
+      const state = q ? answers.get(q.id) : null;
+      if (state && state.checked) {
+        // Already evaluated: go to next
+        e.preventDefault();
+        if (!btnNext.disabled) btnNext.click();
+      }
+      // else allow normal form submission
+    });
   }
 
   answerForm.addEventListener('submit', async (e) => {
