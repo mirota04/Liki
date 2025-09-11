@@ -1860,7 +1860,7 @@ app.get('/quiz/vocabulary', requireAuth, async (req, res) => {
                // Korean → English: Show Korean word, expect English answer
                return {
                  id: word.id,
-                 prompt: `Translate to English: ${word.word}`,
+                 prompt: `${word.word}`,
                  answer: word.meaning,
                  korean: word.word,
                  georgian: word.meaning_geo,
@@ -1870,7 +1870,7 @@ app.get('/quiz/vocabulary', requireAuth, async (req, res) => {
                // English → Korean: Show English meaning, expect Korean answer
                return {
                  id: word.id,
-                 prompt: `Translate to Korean: ${word.meaning}`,
+                 prompt: `${word.meaning}`,
                  answer: word.word,
                  korean: word.word,
                  georgian: word.meaning_geo,
@@ -2023,7 +2023,7 @@ app.get('/quiz/mixed', requireAuth, async (req, res) => {
         // Korean → English: Show Korean word, expect English answer
         return {
           id: word.id,
-          prompt: `Translate to English: ${word.word}`,
+          prompt: `${word.word}`,
           answer: word.meaning,
           korean: word.word,
           georgian: word.meaning_geo,
@@ -2033,7 +2033,7 @@ app.get('/quiz/mixed', requireAuth, async (req, res) => {
         // English → Korean: Show English meaning, expect Korean answer
         return {
           id: word.id,
-          prompt: `Translate to Korean: ${word.meaning}`,
+          prompt: `${word.meaning}`,
           answer: word.word,
           korean: word.word,
           georgian: word.meaning_geo,
@@ -2225,7 +2225,7 @@ app.get('/api/general/words', requireAuth, async (req, res) => {
         // Korean → English: Show Korean word, expect English answer
         return {
           id: word.id,
-          prompt: `Translate to English: ${word.word}`,
+          prompt: `${word.word}`,
           answer: word.meaning,
           korean: word.word,
           georgian: word.meaning_geo,
@@ -2235,7 +2235,7 @@ app.get('/api/general/words', requireAuth, async (req, res) => {
         // English → Korean: Show English meaning, expect Korean answer
         return {
           id: word.id,
-          prompt: `Translate to Korean: ${word.meaning}`,
+          prompt: `${word.meaning}`,
           answer: word.word,
           korean: word.word,
           georgian: word.meaning_geo,

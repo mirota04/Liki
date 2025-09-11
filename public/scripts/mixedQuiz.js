@@ -130,7 +130,8 @@
     const q = questions[current];
     qNumberEl.textContent = String(current + 1);
     qTitleEl.textContent = `Question ${current + 1}`;
-    qPromptEl.textContent = q.prompt || 'Translate:';
+    qPromptEl.textContent = q.prompt || '';
+    qPromptEl.className = 'mb-4 text-primary text-xl font-semibold';
 
     const state = answers.get(q.id);
     answerInput.value = state?.given || '';
@@ -307,7 +308,7 @@
     saveProgress();
   }
 
-    // Submit & check for grammar page
+  // Submit & check for grammar page
   btnSubmitGrammar.addEventListener('click', async () => {
     try {
       // Disable button during submission
@@ -323,24 +324,24 @@
         }
       });
       
-             // Collect grammar answers for OpenAI evaluation
-       const grammarAnswers = [];
-       const grammarInputs = grammarQuestionsEl.querySelectorAll('input[data-id]');
-       grammarInputs.forEach((input) => {
-         const ruleId = input.getAttribute('data-id');
-         const ruleTitle = input.getAttribute('data-rule-title');
-         const englishExample = input.getAttribute('data-english-example');
-         const koreanAnswer = input.value.trim();
-         
-         if (koreanAnswer) {
-           grammarAnswers.push({
-             ruleId,
-             ruleTitle,
-             englishExample,
-             koreanAnswer
-           });
-         }
-       });
+      // Collect grammar answers for OpenAI evaluation
+      const grammarAnswers = [];
+      const grammarInputs = grammarQuestionsEl.querySelectorAll('input[data-id]');
+      grammarInputs.forEach((input) => {
+        const ruleId = input.getAttribute('data-id');
+        const ruleTitle = input.getAttribute('data-rule-title');
+        const englishExample = input.getAttribute('data-english-example');
+        const koreanAnswer = input.value.trim();
+        
+        if (koreanAnswer) {
+          grammarAnswers.push({
+            ruleId,
+            ruleTitle,
+            englishExample,
+            koreanAnswer
+          });
+        }
+      });
       
       // First submit mixed quiz completion
       const response = await fetch('/quiz/mixed/submit', {
@@ -416,7 +417,7 @@
             </div>
             <p class="text-green-700 mt-2">Great job! You've completed today's mixed quiz.</p>
             <div class="mt-4">
-              <a href="/home" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-800 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+              <a href="/home" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-800 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500">
                 Return to Home
               </a>
             </div>

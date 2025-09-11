@@ -48,7 +48,7 @@
             <div id="qNumber" class="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">1</div>
             <h3 id="qTitle" class="text-dark font-medium">Question</h3>
           </div>
-          <div id="qPrompt" class="mb-4 text-dark">Translate this word:</div>
+          <div id="qPrompt" class="mb-4 text-primary text-xl font-semibold">&nbsp;</div>
           <form id="answerForm" class="space-y-4">
             <input id="answerInput" type="text" placeholder="Type your answer..." class="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
             <div id="answerFeedback" class="text-sm font-medium"></div>
@@ -79,10 +79,10 @@
     const mainContent = document.querySelector('main');
     mainContent.innerHTML = `
       <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-                 <div class="mb-6">
-           <h1 class="text-2xl sm:text-3xl font-bold text-dark">General Quiz - Grammar</h1>
-           <p class="text-warm mt-1">Test your grammar knowledge with 20 random rules</p>
-         </div>
+        <div class="mb-6">
+          <h1 class="text-2xl sm:text-3xl font-bold text-dark">General Quiz - Grammar</h1>
+          <p class="text-warm mt-1">Test your grammar knowledge with 20 random rules</p>
+        </div>
 
         <!-- Grammar Questions -->
         <div class="space-y-6" id="grammarQuestions">
@@ -184,7 +184,8 @@
       const q = questions[current];
       qNumberEl.textContent = String(current + 1);
       qTitleEl.textContent = `Question ${current + 1}`;
-      qPromptEl.textContent = q.prompt || 'Translate:';
+      qPromptEl.textContent = q.prompt || '';
+      qPromptEl.className = 'mb-4 text-primary text-xl font-semibold';
 
       const state = answers.get(q.id);
       answerInput.value = state?.given || '';
@@ -379,22 +380,22 @@
     const btnSubmitGrammar = document.getElementById('btnSubmitGrammar');
     const grammarResultsEl = document.getElementById('grammarResults');
 
-         // Fetch 20 random grammar rules from the database
-     let grammarQuestions = [];
- 
-     async function fetchGrammarQuestions() {
-       try {
-         const response = await fetch('/api/general/grammar?count=20');
-         if (!response.ok) throw new Error('Failed to fetch grammar questions');
-         const data = await response.json();
-         grammarQuestions = data.questions;
-         console.log(`Fetched ${grammarQuestions.length} grammar questions for general grammar quiz`);
-         renderGrammarQuestions();
-       } catch (err) {
-         console.error('Error fetching grammar questions:', err);
-         grammarQuestionsEl.innerHTML = '<div class="text-red-600">Error loading grammar questions. Please try again.</div>';
-       }
-     }
+    // Fetch 20 random grammar rules from the database
+    let grammarQuestions = [];
+
+    async function fetchGrammarQuestions() {
+      try {
+        const response = await fetch('/api/general/grammar?count=20');
+        if (!response.ok) throw new Error('Failed to fetch grammar questions');
+        const data = await response.json();
+        grammarQuestions = data.questions;
+        console.log(`Fetched ${grammarQuestions.length} grammar questions for general grammar quiz`);
+        renderGrammarQuestions();
+      } catch (err) {
+        console.error('Error fetching grammar questions:', err);
+        grammarQuestionsEl.innerHTML = '<div class="text-red-600">Error loading grammar questions. Please try again.</div>';
+      }
+    }
 
     function renderGrammarQuestions() {
       grammarQuestionsEl.innerHTML = '';
@@ -437,16 +438,16 @@
           }
         });
 
-                 // Evaluate grammar with OpenAI (no token limit for 20 grammar rules)
-         if (grammarAnswers.length > 0) {
-           const grammarResponse = await fetch('/api/grammar/evaluate', {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ 
-               answers: grammarAnswers,
-               maxTokens: 30000 // Higher token limit for 20 grammar rules
-             })
-           });
+        // Evaluate grammar with OpenAI (no token limit for 20 grammar rules)
+        if (grammarAnswers.length > 0) {
+          const grammarResponse = await fetch('/api/grammar/evaluate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              answers: grammarAnswers,
+              maxTokens: 30000 // Higher token limit for 20 grammar rules
+            })
+          });
 
           if (!grammarResponse.ok) throw new Error('Failed to evaluate grammar');
 
