@@ -547,20 +547,10 @@ window.addEventListener('click', (event) => {
 
             const streakCount = document.getElementById('streakCount');
             const streakBadgeText = document.getElementById('streakBadgeText');
-            const pctEl = document.getElementById('todayProgressPct');
-            const progressCircle = document.querySelector('.progress-ring-circle');
+            // Do NOT update hero progress ring or today's percent here; daily challenges control that.
 
             if (streakCount) streakCount.textContent = String(streak);
             if (streakBadgeText) streakBadgeText.textContent = `${streak} day streak`;
-            if (pctEl) pctEl.textContent = `${pct}%`;
-
-            // Update ring stroke offset if present
-            if (progressCircle) {
-                const circumference = 2 * Math.PI * 40; // r=40 as in SVG
-                const offset = circumference - (pct / 100) * circumference;
-                progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
-                progressCircle.style.strokeDashoffset = offset;
-            }
         } catch (e) {
             // ignore
         }
@@ -759,7 +749,7 @@ window.addEventListener('click', (event) => {
             setFocus('focusVocabularyIcon', vocabCompleted, vocabCrowned);
             setFocus('focusGeneralIcon', generalCompleted, generalCrowned);
 
-            // Update hero section progress wheel
+            // Update hero section progress wheel strictly from daily challenges
             const progressCircle = document.querySelector('.progress-ring-circle');
             const todayProgressPct = document.getElementById('todayProgressPct');
             
