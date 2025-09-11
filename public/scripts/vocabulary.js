@@ -521,11 +521,14 @@ document.addEventListener('DOMContentLoaded', function() {
 			return;
 		}
 
+		// Hide card during content update to avoid any flicker/leak
+		flashcard.style.visibility = 'hidden';
+
 		const card = remainingCards[currentCardIndex];
 		isFlipped = false;
 		flashcard.classList.remove('flipped', 'entering');
 		
-		// Set card content based on direction
+		// Set card content based on direction (front = prompt, back = answer)
 		if (currentDirection === 'en-ko') {
 			cardFrontText.textContent = card.meaning;
 			cardBackText.textContent = card.word;
@@ -534,10 +537,14 @@ document.addEventListener('DOMContentLoaded', function() {
 			cardBackText.textContent = card.meaning;
 		}
 
-		// Add entrance animation
-		setTimeout(() => {
-			flashcard.classList.add('entering');
-		}, 50);
+		// Show card only after content is set and state is reset
+		requestAnimationFrame(() => {
+			flashcard.style.visibility = 'visible';
+			// Add entrance animation
+			setTimeout(() => {
+				flashcard.classList.add('entering');
+			}, 20);
+		});
 	}
 
 	function flipCard() {
