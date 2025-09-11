@@ -364,7 +364,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			});
 		});
 	}
-
+	
 	// Modal events
 	if (floatingAddBtn) floatingAddBtn.addEventListener('click', openModal);
 	if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
@@ -529,10 +529,9 @@ document.addEventListener('DOMContentLoaded', function() {
 	}
 
 	function flipCard() {
-		if (isFlipped) return;
-		
-		isFlipped = true;
-		flashcard.classList.add('flipped');
+		// Toggle flip state to allow unlimited flips before marking
+		isFlipped = !isFlipped;
+		flashcard.classList.toggle('flipped', isFlipped);
 	}
 
 	function nextCard(isCorrect) {
