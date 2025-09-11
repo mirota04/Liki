@@ -455,6 +455,18 @@ document.addEventListener('DOMContentLoaded', function() {
 	// Initialize flashcards on page load
 	loadTodaysWords();
 
+	function applyDirectionButtonStyles() {
+		if (!directionEnKo || !directionKoEn) return;
+		const base = 'direction-btn px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200';
+		if (currentDirection === 'en-ko') {
+			directionEnKo.className = `${base} active bg-white text-primary shadow-sm`;
+			directionKoEn.className = `${base} text-gray-600 hover:text-gray-800`;
+		} else {
+			directionEnKo.className = `${base} text-gray-600 hover:text-gray-800`;
+			directionKoEn.className = `${base} active bg-white text-primary shadow-sm`;
+		}
+	}
+
 	async function loadTodaysWords() {
 		try {
 			const response = await fetch('/api/flashcards/today');
@@ -601,11 +613,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	function setDirection(direction) {
 		currentDirection = direction;
-		
-		// Update button states
-		directionEnKo.classList.toggle('active', direction === 'en-ko');
-		directionKoEn.classList.toggle('active', direction === 'ko-en');
-		
+		applyDirectionButtonStyles();
 		// Reload current card with new direction
 		if (flashcardContainer && !flashcardContainer.classList.contains('hidden')) {
 			loadCurrentCard();
@@ -624,6 +632,9 @@ document.addEventListener('DOMContentLoaded', function() {
 	if (directionKoEn) {
 		directionKoEn.addEventListener('click', () => setDirection('ko-en'));
 	}
+
+	// Enforce initial visual state for direction buttons
+	applyDirectionButtonStyles();
 
 	if (flashcard) {
 		flashcard.addEventListener('click', flipCard);
