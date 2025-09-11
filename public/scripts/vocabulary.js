@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				<div class="korean-text text-lg mb-1">${korean}</div>
 				<div class="meaning-text text-sm">${meaning}</div>
 			</div>
-			<button class="remove-btn w-8 h-8 flex items-center justify-center hover:bg-red-50 rounded-full transition-colors">
+			<button class="remove-btn w-8 h-8 flex items-center justify-center hover:bg-red-50 rounded-full transition-colors" title="Remove">
 				<i class="ri-close-line text-red-400 hover:text-red-600"></i>
 			</button>
 		`;
@@ -134,6 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			wordCard.remove();
 			checkEmptyDictionary();
 			showNotification('Word removed from dictionary', 'success');
+			// Note: This addWordToDictionary is for local demo additions; real DB entries come via server
 		});
 
 		dictionaryList.appendChild(wordCard);
@@ -220,22 +221,30 @@ document.addEventListener('DOMContentLoaded', function() {
 		words.forEach(word => {
 			const wordCard = document.createElement('div');
 			wordCard.className = 'dictionary-card p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 mb-2 sm:mb-3 last:mb-0';
+			wordCard.setAttribute('data-id', word.id);
 			wordCard.innerHTML = `
 				<div class="flex-1">
 					<div class="korean-text text-base sm:text-lg mb-1">${word.word}</div>
 					<div class="meaning-text text-xs sm:text-sm">${word.meaning}${word.meaning_geo ? ` (${word.meaning_geo})` : ''}</div>
 					<div class="text-xs text-gray-400 mt-1">Added: ${new Date(word.created_at).toLocaleDateString()}</div>
 				</div>
-				<button class="remove-btn w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-red-50 rounded-full transition-colors self-end sm:self-auto">
+				<button class="remove-btn w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-red-50 rounded-full transition-colors self-end sm:self-auto" title="Remove">
 					<i class="ri-close-line text-red-400 hover:text-red-600 text-sm sm:text-base"></i>
 				</button>
 			`;
 			
-			// Add remove functionality
+			// Add remove functionality (frontend + backend)
 			const removeBtn = wordCard.querySelector('.remove-btn');
-			removeBtn.addEventListener('click', function() {
+			removeBtn.addEventListener('click', async function() {
+				const id = wordCard.getAttribute('data-id');
 				wordCard.remove();
 				showNotification('Word removed from dictionary', 'success');
+				try {
+					await fetch(`/api/dictionary/${id}`, { method: 'DELETE' });
+				} catch (e) {
+					console.error('Failed to delete word from server:', e);
+				}
+				checkEmptyDictionary();
 			});
 			
 			dictionaryWordsList.appendChild(wordCard);

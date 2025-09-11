@@ -1046,7 +1046,7 @@ app.get("/vocabulary", requireAuth, async (req, res) => {
     
     // Fetch 3 random words from user's dictionary
     const randomWordsQuery = `
-      SELECT word, meaning, meaning_geo 
+      SELECT id, word, meaning, meaning_geo 
       FROM Dictionary 
       WHERE user_id = $1 
       ORDER BY RANDOM() 
@@ -1069,7 +1069,7 @@ app.get("/api/dictionary", requireAuth, async (req, res) => {
     const userId = req.session.user.id;
     
     const query = `
-      SELECT word, meaning, meaning_geo, created_at 
+      SELECT id, word, meaning, meaning_geo, created_at 
       FROM Dictionary 
       WHERE user_id = $1 
       ORDER BY created_at DESC
@@ -1925,27 +1925,42 @@ app.get('/quiz/mixed', requireAuth, async (req, res) => {
     let targetDates = [];
     let dateLabels = [];
     
-    // 1 successful day ago (yesterday)
-    if (successfulDates.length >= 1) {
-      targetDates.push(successfulDates[0]); // Most recent successful day (yesterday)
+    // Build a map of exact day differences -> date, excluding today
+    const byExactDiff = new Map();
+    const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    successfulDaysResult.rows.forEach(r => {
+      // Normalize row date (treat as local date without time)
+      const d = new Date(r.activity_date);
+      const rowDateOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const diffMs = todayDateOnly - rowDateOnly; // today minus row
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      if (diffDays >= 1) {
+        // Keep the first occurrence for an exact diff if multiple exist
+        if (!byExactDiff.has(diffDays)) byExactDiff.set(diffDays, rowDateOnly);
+      }
+    });
+    
+    // 1 active day ago (yesterday)
+    if (byExactDiff.has(1)) {
+      targetDates.push(byExactDiff.get(1));
       dateLabels.push('1 day ago');
     }
     
-    // 7 successful days ago (1 week ago)
-    if (successfulDates.length >= 7) {
-      targetDates.push(successfulDates[6]); // 7th most recent successful day
+    // 7 active days ago
+    if (byExactDiff.has(7)) {
+      targetDates.push(byExactDiff.get(7));
       dateLabels.push('7 days ago');
     }
     
-    // 30 successful days ago (1 month ago)
-    if (successfulDates.length >= 30) {
-      targetDates.push(successfulDates[29]); // 30th most recent successful day
+    // 30 active days ago
+    if (byExactDiff.has(30)) {
+      targetDates.push(byExactDiff.get(30));
       dateLabels.push('30 days ago');
     }
     
     // If we don't have enough successful days, we can't provide a full 1/1/1 quiz
     // Don't fill with random dates - this breaks the 1/1/1 rule
-    console.log(`1/1/1 Rule Status: ${targetDates.length === 3 ? 'Full quiz available' : 'Partial quiz available (${targetDates.length}/3 dates found)'}`);
+    console.log(`1/1/1 Rule Status: ${targetDates.length === 3 ? 'Full quiz available' : `Partial quiz available (${targetDates.length}/3 dates found)`}`);
     
     // Format dates for SQL queries - use local timezone to avoid UTC conversion issues
     const dateStrings = targetDates.map(date => {
@@ -2830,6 +2845,21 @@ app.put('/grammar/:id', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Update grammar error:', err);
     res.status(500).json({ error: 'update_failed' });
+  }
+});
+
+// Delete a dictionary word by id
+app.delete('/api/dictionary/:id', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'invalid_id' });
+    const del = await db.query('DELETE FROM Dictionary WHERE id = $1 AND user_id = $2', [id, userId]);
+    if (del.rowCount === 0) return res.status(404).json({ error: 'not_found' });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting dictionary word:', err);
+    res.status(500).json({ error: 'delete_failed' });
   }
 });
 
