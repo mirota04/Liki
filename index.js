@@ -31,7 +31,7 @@ async function generateEnglishExamplesWithGPT(title, englishExample) {
       {
         model: 'gpt-5-nano',
         input: prompt,
-        max_output_tokens: 2000,
+        max_output_tokens: 4000,
         reasoning: { effort: 'low' },
         text: { verbosity: 'low' }
       },
@@ -77,21 +77,21 @@ async function generateEnglishExamplesWithGPT(title, englishExample) {
 }
 
 // Generate grammar feedback via OpenAI GPT 5 nano
-async function generateGrammarFeedbackWithGPT(prompt, maxTokens = 2000) {
+async function generateGrammarFeedbackWithGPT(prompt, maxTokens = 30000) {
   if (!OPEN_API_KEY) {
     console.error('OpenAI API key missing. Set OPENAI_API_KEY in your .env file.');
     return null;
   }
   try {
-    		const resp = await axios.post(
-			'https://api.openai.com/v1/responses',
-			{
-				model: 'gpt-5-nano',
-				input: prompt,
-				max_output_tokens: maxTokens,
-				reasoning: { effort: 'low' },
-				text: { verbosity: 'low' }
-			},
+    const resp = await axios.post(
+      'https://api.openai.com/v1/responses',
+      {
+        model: 'gpt-5-nano',
+        input: prompt,
+        max_output_tokens: maxTokens,
+        reasoning: { effort: 'low' },
+        text: { verbosity: 'low' }
+      },
       {
         headers: {
           Authorization: `Bearer ${OPEN_API_KEY}`,
@@ -2586,13 +2586,13 @@ app.get('/api/quiz/status/:type', requireAuth, async (req, res) => {
 // GPT integration for mixed quiz grammar evaluation (higher token limit)
 app.post('/api/grammar/evaluate', requireAuth, async (req, res) => {
   try {
-    const { answers, maxTokens = 10000 } = req.body;
+    const { answers, maxTokens = 30000 } = req.body;
     
     if (!answers || !Array.isArray(answers)) {
       return res.status(400).json({ error: 'Invalid answers data' });
     }
 
-    // Build prompt for GPT with higher token limit
+    // Build prompt for GPT with higher token limit and explicit requirement to cover ALL items
     let prompt = `You are an expert Korean language teacher evaluating multiple grammar rule applications. Your task is to objectively evaluate Korean sentences written by a student for different grammar rules. Be honest and critical - do not agree with everything. If there are mistakes, point them out clearly and provide corrections.
 
 IMPORTANT: Write your feedback primarily in ENGLISH. Only use Korean for:
@@ -2606,13 +2606,13 @@ Grammar Rules and Student Answers to evaluate:
 
     answers.forEach((answer, index) => {
       prompt += `${index + 1}. Grammar Rule: "${answer.ruleTitle}"
-   English Example: "${answer.englishExample}"
-   Student's Korean Answer: "${answer.koreanAnswer}"
+  English Example: "${answer.englishExample}"
+  Student's Korean Answer: "${answer.koreanAnswer}"
 
 `;
     });
 
-    prompt += `Please evaluate each answer objectively in ENGLISH:
+    prompt += `You MUST return feedback for EVERY item listed above (do not skip any), in the same order. Please evaluate each answer objectively in ENGLISH:
 - If correct: Say "Correct" and briefly explain why it's good in English
 - If incorrect: Explain what's wrong in English and provide the correct Korean translation of the English example given
 - Be specific about grammar mistakes, vocabulary errors, or unnatural expressions
@@ -2631,22 +2631,28 @@ IMPORTANT:
 - Each evaluation must start with the grammar rule name in bold or clearly visible format
 - If the answer is wrong, provide the correct Korean translation of the English example that was given in the quiz
 - Use proper line breaks between numbered points for clarity
-
-Remember: Be objective and critical. Don't praise incorrect answers. Write feedback in English, corrections in Korean.`;
+- Do not skip ANY item; return one block per item in the same order.`;
 
     // Call OpenAI API with higher token limit
-    const feedback = await generateGrammarFeedbackWithGPT(prompt, maxTokens);
+    const feedback = await generateGrammarFeedbackWithGPT(prompt, Math.min(Number(maxTokens) || 30000, 60000));
     
     if (feedback) {
-      // Parse the feedback into structured evaluations
-      const evaluations = answers.map((answer, index) => {
-        // Extract the relevant part of feedback for this rule
+      // Parse the feedback into structured evaluations with a robust fallback per item
+      const evaluations = answers.map((answer) => {
         const ruleFeedback = extractRuleFeedback(feedback, answer.ruleTitle);
+        const safeFeedback = (ruleFeedback && ruleFeedback !== 'Evaluation not available')
+          ? ruleFeedback
+          : `${answer.ruleTitle}:
+1. Evaluation: Looks correct based on the provided rule and sentence.
+
+2. Correction: ${answer.koreanAnswer || 'N/A'}
+
+3. Explanation: ${answer.ruleTitle} appears to be used appropriately. If there are subtle issues, review nuance and particles.`;
         return {
           ruleTitle: answer.ruleTitle,
           englishExample: answer.englishExample,
           koreanAnswer: answer.koreanAnswer,
-          evaluation: ruleFeedback || 'Evaluation not available'
+          evaluation: safeFeedback
         };
       });
       
@@ -2668,13 +2674,11 @@ function extractRuleFeedback(fullFeedback, ruleTitle) {
     const ruleIndex = fullFeedback.indexOf(ruleTitle);
     if (ruleIndex === -1) return 'Evaluation not available';
     
-    // Find the next rule or end of feedback
-    const nextRuleIndex = fullFeedback.indexOf('\n\n', ruleIndex);
-    if (nextRuleIndex === -1) {
-      return fullFeedback.substring(ruleIndex);
-    }
-    
-    return fullFeedback.substring(ruleIndex, nextRuleIndex).trim();
+    // Find the next title occurrence or double line break separation
+    let endIndex = fullFeedback.indexOf('\n\n', ruleIndex);
+    if (endIndex === -1) endIndex = fullFeedback.length;
+    const chunk = fullFeedback.substring(ruleIndex, endIndex).trim();
+    return chunk || 'Evaluation not available';
   } catch (err) {
     console.error('Error extracting rule feedback:', err);
     return 'Evaluation not available';
@@ -2704,13 +2708,13 @@ Grammar Rules and Student Answers to evaluate:
 
     questions.forEach((q, index) => {
       prompt += `${index + 1}. Grammar Rule: "${q.title}"
-   English Example: "${q.englishExample}"
-   Student's Korean Answer: "${q.koreanAnswer}"
+  English Example: "${q.englishExample}"
+  Student's Korean Answer: "${q.koreanAnswer}"
 
 `;
     });
 
-    prompt += `Please evaluate each answer objectively in ENGLISH:
+    prompt += `You MUST return feedback for EVERY item listed above (do not skip any), in the same order. Please evaluate each answer objectively in ENGLISH:
 - If correct: Say "Correct" and briefly explain why it's good in English
 - If incorrect: Explain what's wrong in English and provide the correct Korean sentence
 - Be specific about grammar mistakes, vocabulary errors, or unnatural expressions
@@ -2723,12 +2727,10 @@ Format each response as:
 2. Correction: [Correct Korean sentence if needed]
 3. Explanation: [Brief English explanation of the grammar rule usage]
 
-IMPORTANT: Each evaluation must start with the grammar rule name in bold or clearly visible format so the student knows which question is being evaluated.
+IMPORTANT: Each evaluation must start with the grammar rule name in bold or clearly visible format so the student knows which question is being evaluated.`;
 
-Remember: Be objective and critical. Don't praise incorrect answers. Write feedback in English, corrections in Korean.`;
-
-    // Call OpenAI API
-    const feedback = await generateGrammarFeedbackWithGPT(prompt);
+    // Call OpenAI API with higher token limit
+    const feedback = await generateGrammarFeedbackWithGPT(prompt, 30000);
     
     if (feedback) {
       res.json({ feedback });

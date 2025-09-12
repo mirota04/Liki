@@ -208,7 +208,8 @@
 
       // Show feedback and update button/input styles
       if (correct) {
-        feedbackEl.textContent = 'Correct!';
+        const correctAnswer = q.answer;
+        feedbackEl.textContent = `Correct! Answer: ${correctAnswer}`;
         feedbackEl.className = 'text-sm font-medium text-green-600';
       } else {
         // Show the correct answer when wrong
