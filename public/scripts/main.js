@@ -490,8 +490,9 @@ window.addEventListener('click', (event) => {
     function isActive() {
         const now = Date.now();
         const notIdle = (now - lastActivityTs) <= IDLE_TIMEOUT_MS;
-        const visible = document.visibilityState === 'visible';
-        return visible && notIdle;
+        // Only check for idle timeout, not tab visibility
+        // Timer should continue running even when tab is not visible
+        return notIdle;
     }
 
     async function heartbeat() {
@@ -516,10 +517,10 @@ window.addEventListener('click', (event) => {
     }
 
     document.addEventListener('visibilitychange', () => {
+        // Always start heartbeat when tab becomes visible
+        // Don't stop heartbeat when tab becomes invisible - let it continue running
         if (document.visibilityState === 'visible') {
             startHeartbeat();
-        } else {
-            stopHeartbeat();
         }
     });
 
