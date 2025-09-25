@@ -162,12 +162,17 @@
 
 		<!-- Dictionary Preview -->
 		<div id="my-dictionary" class="dictionary-preview rounded-2xl p-4 sm:p-6 max-w-7xl mx-auto px-4 sm:px-6 mt-6 sm:mt-8">
-			<div class="flex items-center justify-between mb-6">
+		<div class="flex items-center justify-between mb-6">
+			<div class="flex items-center space-x-3">
 				<h3 class="text-xl font-semibold text-dark">My Dictionary</h3>
-				<button id="viewAllBtn" class="custom-text-primary hover:text-secondary font-medium transition-colors">
-					View All <i class="ri-arrow-right-line ml-1"></i>
-				</button>
+				<div class="px-2 py-1 bg-primary/10 rounded-full word-count-badge">
+					<span class="text-xs font-medium text-primary" id="dictionarySectionCount">0 words</span>
+				</div>
 			</div>
+			<button id="viewAllBtn" class="custom-text-primary hover:text-secondary font-medium transition-colors">
+				View All <i class="ri-arrow-right-line ml-1"></i>
+			</button>
+		</div>
 
 			<div id="dictionaryList" class="space-y-4">
 				<% if (randomWords && randomWords.length > 0) { %>
@@ -319,12 +324,17 @@
 	<!-- View All Dictionary Modal -->
 	<div id="viewAllModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden backdrop-blur-sm">
 		<div class="bg-white rounded-2xl w-full max-w-4xl mx-4 p-4 sm:p-6 md:p-8 h-[90vh] flex flex-col">
-			<div class="flex items-center justify-between mb-4 sm:mb-6 flex-shrink-0">
+		<div class="flex items-center justify-between mb-4 sm:mb-6 flex-shrink-0">
+			<div class="flex items-center space-x-3">
 				<h2 class="text-xl sm:text-2xl font-bold text-dark">My Dictionary</h2>
-				<button id="closeViewAllModal" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors">
-					<i class="ri-close-line text-gray-500"></i>
-				</button>
+				<div class="px-3 py-1 bg-primary/10 rounded-full word-count-badge">
+					<span class="text-sm font-medium text-primary" id="dictionaryModalCount">0 words</span>
+				</div>
 			</div>
+			<button id="closeViewAllModal" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors">
+				<i class="ri-close-line text-gray-500"></i>
+			</button>
+		</div>
 			
 			<!-- Search Bar -->
 			<div class="mb-4 sm:mb-6 flex-shrink-0">

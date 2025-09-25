@@ -178,6 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		if (!viewAllModal) return;
 		viewAllModal.classList.remove('hidden');
 		loadAllDictionaryWords();
+		updateWordCounts(); // Update count when modal opens
 	}
 
 	function closeViewAllModal() {
@@ -241,6 +242,8 @@ document.addEventListener('DOMContentLoaded', function() {
 				showNotification('Word removed from dictionary', 'success');
 				try {
 					await fetch(`/api/dictionary/${id}`, { method: 'DELETE' });
+					// Update word counts after successful deletion
+					updateWordCounts();
 				} catch (e) {
 					console.error('Failed to delete word from server:', e);
 				}
@@ -318,6 +321,8 @@ document.addEventListener('DOMContentLoaded', function() {
 				georgianInput.value = '';
 				closeModal();
 				showNotification('Word added to dictionary!', 'success');
+				// Update word counts
+				updateWordCounts();
 			} else {
 				showNotification(data.error || 'Failed to add word', 'error');
 			}
@@ -483,6 +488,10 @@ document.addEventListener('DOMContentLoaded', function() {
 	const backToOptionsFromWordsBtn = document.getElementById('backToOptionsFromWords');
 	const startWithSelectedWordsBtn = document.getElementById('startWithSelectedWords');
 
+	// Word count elements
+	const dictionarySectionCount = document.getElementById('dictionarySectionCount');
+	const dictionaryModalCount = document.getElementById('dictionaryModalCount');
+
 	let flashcards = [];
 	let currentCardIndex = 0;
 	let currentDirection = 'en-ko'; // 'en-ko' or 'ko-en'
@@ -502,6 +511,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	// Initialize flashcards on page load
 	loadTodaysWords();
+	updateWordCounts();
+
+	async function updateWordCounts() {
+		try {
+			const response = await fetch('/api/dictionary');
+			const data = await response.json();
+			
+			if (data.success) {
+				const count = data.words.length;
+				const countText = count === 1 ? '1 word' : `${count} words`;
+				
+				if (dictionarySectionCount) {
+					dictionarySectionCount.textContent = countText;
+				}
+				if (dictionaryModalCount) {
+					dictionaryModalCount.textContent = countText;
+				}
+			}
+		} catch (error) {
+			console.error('Error updating word counts:', error);
+		}
+	}
 
 	function applyDirectionButtonStyles() {
 		if (!directionEnKo || !directionKoEn) return;

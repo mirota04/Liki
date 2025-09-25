@@ -832,3 +832,40 @@
 	background: var(--text-secondary);
 }
 
+/* Word Count Badge Styles */
+.word-count-badge {
+	background: linear-gradient(135deg, rgba(95, 131, 150, 0.1) 0%, rgba(95, 131, 150, 0.05) 100%);
+	border: 1px solid rgba(95, 131, 150, 0.2);
+	transition: all 0.2s ease;
+}
+
+.word-count-badge:hover {
+	background: linear-gradient(135deg, rgba(95, 131, 150, 0.15) 0%, rgba(95, 131, 150, 0.08) 100%);
+	transform: translateY(-1px);
+}
+
+/* Dark mode for word count badges */
+[data-theme="dark"] .word-count-badge {
+	background: linear-gradient(135deg, rgba(95, 131, 150, 0.15) 0%, rgba(95, 131, 150, 0.08) 100%);
+	border-color: rgba(95, 131, 150, 0.3);
+}
+
+[data-theme="dark"] .word-count-badge:hover {
+	background: linear-gradient(135deg, rgba(95, 131, 150, 0.2) 0%, rgba(95, 131, 150, 0.12) 100%);
+}
+
+/* Responsive word count badges */
+@media (max-width: 640px) {
+	.word-count-badge {
+		padding: 0.25rem 0.5rem;
+		font-size: 0.625rem;
+	}
+}
+
+@media (max-width: 480px) {
+	.word-count-badge {
+		padding: 0.125rem 0.375rem;
+		font-size: 0.5rem;
+	}
+}
+
