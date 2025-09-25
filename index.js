@@ -1104,6 +1104,48 @@ app.get("/api/flashcards/today", requireAuth, async (req, res) => {
   }
 });
 
+// Get words for flashcards by specific date
+app.get("/api/flashcards/date", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const { date } = req.query;
+    
+    if (!date) {
+      return res.status(400).json({ success: false, error: 'Date parameter is required' });
+    }
+    
+    // Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date)) {
+      return res.status(400).json({ success: false, error: 'Invalid date format. Use YYYY-MM-DD' });
+    }
+    
+    // Parse the date and create start/end boundaries to avoid timezone issues
+    const selectedDate = new Date(date + 'T00:00:00.000Z'); // Force UTC midnight
+    const nextDay = new Date(selectedDate);
+    nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+    
+    console.log('Searching for words between:', selectedDate.toISOString(), 'and', nextDay.toISOString());
+    
+    const query = `
+      SELECT word, meaning, meaning_geo 
+      FROM Dictionary 
+      WHERE user_id = $1 
+        AND created_at >= $2 
+        AND created_at < $3
+      ORDER BY created_at DESC
+    `;
+    
+    const result = await db.query(query, [userId, selectedDate.toISOString(), nextDay.toISOString()]);
+    console.log(`Found ${result.rows.length} words for date ${date}`);
+    
+    res.json({ success: true, words: result.rows });
+  } catch (err) {
+    console.error('Error fetching words for date:', err);
+    res.status(500).json({ success: false, error: 'Failed to fetch words for selected date' });
+  }
+});
+
 app.post("/vocabulary", requireAuth, async (req, res) => {
   try {
     const { word, meaning, meaning_geo } = req.body;

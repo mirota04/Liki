@@ -462,11 +462,43 @@ document.addEventListener('DOMContentLoaded', function() {
 	const chooseDateOption = document.getElementById('chooseDateOption');
 	const buildYourOwnOption = document.getElementById('buildYourOwnOption');
 
+	// Date Picker elements
+	const flashcardOptions = document.getElementById('flashcardOptions');
+	const datePickerSection = document.getElementById('datePickerSection');
+	const prevMonthBtn = document.getElementById('prevMonth');
+	const nextMonthBtn = document.getElementById('nextMonth');
+	const currentMonthYear = document.getElementById('currentMonthYear');
+	const calendarDays = document.getElementById('calendarDays');
+	const selectedDateDisplay = document.getElementById('selectedDateDisplay');
+	const selectedDateText = document.getElementById('selectedDateText');
+	const backToOptionsBtn = document.getElementById('backToOptions');
+	const startWithDateBtn = document.getElementById('startWithDate');
+
+	// Word Selection elements
+	const wordSelectionSection = document.getElementById('wordSelectionSection');
+	const wordSearchInput = document.getElementById('wordSearchInput');
+	const selectedWordsCounter = document.getElementById('selectedWordsCounter');
+	const selectedCount = document.getElementById('selectedCount');
+	const wordsList = document.getElementById('wordsList');
+	const backToOptionsFromWordsBtn = document.getElementById('backToOptionsFromWords');
+	const startWithSelectedWordsBtn = document.getElementById('startWithSelectedWords');
+
 	let flashcards = [];
 	let currentCardIndex = 0;
 	let currentDirection = 'en-ko'; // 'en-ko' or 'ko-en'
 	let remainingCards = [];
 	let isFlipped = false;
+
+	// Date picker state
+	let currentDate = new Date();
+	let selectedDate = null;
+	let currentMonth = currentDate.getMonth();
+	let currentYear = currentDate.getFullYear();
+
+	// Word selection state
+	let allWords = [];
+	let selectedWords = [];
+	let filteredWords = [];
 
 	// Initialize flashcards on page load
 	loadTodaysWords();
@@ -655,16 +687,374 @@ document.addEventListener('DOMContentLoaded', function() {
 	}
 
 	function handleChooseDate() {
+		// Show date picker section with smooth animation
+		showDatePicker();
+	}
+
+	function showDatePicker() {
+		// Hide options and show date picker with animation
+		flashcardOptions.style.opacity = '0';
+		flashcardOptions.style.transform = 'translateX(-20px)';
+		
+		setTimeout(() => {
+			flashcardOptions.classList.add('hidden');
+			datePickerSection.classList.remove('hidden');
+			datePickerSection.style.opacity = '0';
+			datePickerSection.style.transform = 'translateX(20px)';
+			
+			// Generate calendar for current month
+			generateCalendar();
+			
+			// Animate in
+			setTimeout(() => {
+				datePickerSection.style.opacity = '1';
+				datePickerSection.style.transform = 'translateX(0)';
+			}, 50);
+		}, 200);
+	}
+
+	function hideDatePicker() {
+		// Hide date picker and show options with animation
+		datePickerSection.style.opacity = '0';
+		datePickerSection.style.transform = 'translateX(20px)';
+		
+		setTimeout(() => {
+			datePickerSection.classList.add('hidden');
+			flashcardOptions.classList.remove('hidden');
+			flashcardOptions.style.opacity = '0';
+			flashcardOptions.style.transform = 'translateX(-20px)';
+			
+			// Reset selected date
+			selectedDate = null;
+			selectedDateDisplay.classList.add('hidden');
+			startWithDateBtn.disabled = true;
+			
+			// Animate in
+			setTimeout(() => {
+				flashcardOptions.style.opacity = '1';
+				flashcardOptions.style.transform = 'translateX(0)';
+			}, 50);
+		}, 200);
+	}
+
+	function generateCalendar() {
+		const today = new Date();
+		const firstDay = new Date(currentYear, currentMonth, 1);
+		const lastDay = new Date(currentYear, currentMonth + 1, 0);
+		const startDate = new Date(firstDay);
+		startDate.setDate(startDate.getDate() - firstDay.getDay()); // Start from Sunday
+		
+		// Update month/year display
+		const monthNames = [
+			'January', 'February', 'March', 'April', 'May', 'June',
+			'July', 'August', 'September', 'October', 'November', 'December'
+		];
+		currentMonthYear.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+		
+		// Clear existing days
+		calendarDays.innerHTML = '';
+		
+		// Generate 42 days (6 weeks)
+		for (let i = 0; i < 42; i++) {
+			const date = new Date(startDate);
+			date.setDate(startDate.getDate() + i);
+			
+			const dayElement = document.createElement('div');
+			dayElement.className = 'calendar-day text-center py-2 rounded-lg cursor-pointer transition-all duration-200 hover:bg-gray-200';
+			dayElement.textContent = date.getDate();
+			
+			// Check if this is today
+			const isToday = date.toDateString() === today.toDateString();
+			const isCurrentMonth = date.getMonth() === currentMonth;
+			const isFuture = date > today;
+			
+			// Style the day
+			if (isToday) {
+				dayElement.classList.add('bg-primary', 'text-white', 'font-semibold');
+				dayElement.classList.remove('hover:bg-gray-200');
+			} else if (!isCurrentMonth) {
+				dayElement.classList.add('text-gray-400');
+				dayElement.classList.remove('hover:bg-gray-200');
+			} else if (isFuture) {
+				dayElement.classList.add('text-gray-300', 'cursor-not-allowed');
+				dayElement.classList.remove('hover:bg-gray-200');
+			} else {
+				dayElement.classList.add('text-gray-700');
+			}
+			
+			// Add click handler for selectable dates
+			if (isCurrentMonth && !isFuture) {
+				dayElement.addEventListener('click', () => selectDate(date));
+			}
+			
+			calendarDays.appendChild(dayElement);
+		}
+		
+		// Set today as default selected date
+		selectDate(today);
+	}
+
+	function selectDate(date) {
+		// Remove previous selection
+		calendarDays.querySelectorAll('.calendar-day').forEach(day => {
+			day.classList.remove('bg-secondary', 'text-white', 'ring-2', 'ring-primary');
+		});
+		
+		// Find and select the clicked date - use the actual date object passed to the function
+		// instead of reconstructing it from day number
+		const dayElements = calendarDays.querySelectorAll('.calendar-day');
+		dayElements.forEach((day, index) => {
+			// Calculate the actual date for this calendar cell
+			const firstDay = new Date(currentYear, currentMonth, 1);
+			const startDate = new Date(firstDay);
+			startDate.setDate(startDate.getDate() - firstDay.getDay()); // Start from Sunday
+			
+			const cellDate = new Date(startDate);
+			cellDate.setDate(startDate.getDate() + index);
+			
+			// Compare the actual dates, not just day numbers
+			if (cellDate.toDateString() === date.toDateString()) {
+				day.classList.add('bg-secondary', 'text-white', 'ring-2', 'ring-primary');
+				day.classList.remove('hover:bg-gray-200');
+			}
+		});
+		
+		selectedDate = date;
+		selectedDateText.textContent = date.toLocaleDateString('en-US', { 
+			weekday: 'long', 
+			year: 'numeric', 
+			month: 'long', 
+			day: 'numeric' 
+		});
+		selectedDateDisplay.classList.remove('hidden');
+		startWithDateBtn.disabled = false;
+	}
+
+	function changeMonth(direction) {
+		if (direction === 'prev') {
+			currentMonth--;
+			if (currentMonth < 0) {
+				currentMonth = 11;
+				currentYear--;
+			}
+		} else {
+			currentMonth++;
+			if (currentMonth > 11) {
+				currentMonth = 0;
+				currentYear++;
+			}
+		}
+		generateCalendar();
+	}
+
+	async function startFlashcardsWithDate() {
+		if (!selectedDate) return;
+		
 		closeFlashcardsLandingModal();
-		// For now, start with today's words (same as before)
-		// TODO: Implement date picker functionality
-		startFlashcardSession();
+		
+		try {
+			// Format date for API - ensure we use the local date, not UTC
+			const year = selectedDate.getFullYear();
+			const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+			const day = String(selectedDate.getDate()).padStart(2, '0');
+			const dateString = `${year}-${month}-${day}`;
+			
+			console.log('Selected date:', selectedDate);
+			console.log('Formatted date string:', dateString);
+			console.log('Date string for API:', dateString);
+			
+			const response = await fetch(`/api/flashcards/date?date=${dateString}`);
+			const data = await response.json();
+			
+			console.log('API response:', data);
+			
+			if (data.success && data.words.length > 0) {
+				flashcards = data.words;
+				showFlashcardsSection();
+				startFlashcardSession();
+			} else {
+				showNotification(`No words found for ${selectedDate.toLocaleDateString()}`, 'warning');
+			}
+		} catch (error) {
+			console.error('Error loading words for date:', error);
+			showNotification('Failed to load words for selected date', 'error');
+		}
 	}
 
 	function handleBuildYourOwn() {
+		// Show word selection section with smooth animation
+		showWordSelection();
+	}
+
+	function showWordSelection() {
+		// Hide options and show word selection with animation
+		flashcardOptions.style.opacity = '0';
+		flashcardOptions.style.transform = 'translateX(-20px)';
+		
+		setTimeout(() => {
+			flashcardOptions.classList.add('hidden');
+			wordSelectionSection.classList.remove('hidden');
+			wordSelectionSection.style.opacity = '0';
+			wordSelectionSection.style.transform = 'translateX(20px)';
+			
+			// Load words from dictionary
+			loadWordsForSelection();
+			
+			// Animate in
+			setTimeout(() => {
+				wordSelectionSection.style.opacity = '1';
+				wordSelectionSection.style.transform = 'translateX(0)';
+			}, 50);
+		}, 200);
+	}
+
+	function hideWordSelection() {
+		// Hide word selection and show options with animation
+		wordSelectionSection.style.opacity = '0';
+		wordSelectionSection.style.transform = 'translateX(20px)';
+		
+		setTimeout(() => {
+			wordSelectionSection.classList.add('hidden');
+			flashcardOptions.classList.remove('hidden');
+			flashcardOptions.style.opacity = '0';
+			flashcardOptions.style.transform = 'translateX(-20px)';
+			
+			// Reset selection
+			selectedWords = [];
+			selectedWordsCounter.classList.add('hidden');
+			startWithSelectedWordsBtn.disabled = true;
+			wordSearchInput.value = '';
+			
+			// Animate in
+			setTimeout(() => {
+				flashcardOptions.style.opacity = '1';
+				flashcardOptions.style.transform = 'translateX(0)';
+			}, 50);
+		}, 200);
+	}
+
+	async function loadWordsForSelection() {
+		try {
+			const response = await fetch('/api/dictionary');
+			const data = await response.json();
+			
+			if (data.success) {
+				allWords = data.words;
+				filteredWords = [...allWords];
+				displayWords();
+			} else {
+				showNotification('Failed to load dictionary', 'error');
+			}
+		} catch (error) {
+			console.error('Error loading words:', error);
+			showNotification('Failed to load dictionary', 'error');
+		}
+	}
+
+	function displayWords() {
+		if (!wordsList) return;
+		
+		wordsList.innerHTML = '';
+		
+		if (filteredWords.length === 0) {
+			wordsList.innerHTML = `
+				<div class="text-center py-8 text-gray-500">
+					<i class="ri-book-open-line text-3xl mb-2"></i>
+					<p class="text-sm">No words found</p>
+				</div>
+			`;
+			return;
+		}
+		
+		filteredWords.forEach(word => {
+			const isSelected = selectedWords.some(selected => selected.id === word.id);
+			const wordCard = document.createElement('div');
+			wordCard.className = `word-selection-card p-3 rounded-lg border transition-all duration-200 ${isSelected ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200 hover:border-gray-300'}`;
+			wordCard.setAttribute('data-word-id', word.id);
+			
+			wordCard.innerHTML = `
+				<div class="flex items-center justify-between">
+					<div class="flex-1">
+						<div class="korean-text text-base font-semibold mb-1">${word.word}</div>
+						<div class="meaning-text text-sm text-gray-600">${word.meaning}${word.meaning_geo ? ` (${word.meaning_geo})` : ''}</div>
+						<div class="text-xs text-gray-400 mt-1">Added: ${new Date(word.created_at).toLocaleDateString()}</div>
+					</div>
+					<button class="word-action-btn w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 ${isSelected ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-green-100 text-green-600 hover:bg-green-200'}" data-word-id="${word.id}">
+						<i class="${isSelected ? 'ri-subtract-line' : 'ri-add-line'}"></i>
+					</button>
+				</div>
+			`;
+			
+			// Add click handler for the action button
+			const actionBtn = wordCard.querySelector('.word-action-btn');
+			actionBtn.addEventListener('click', (e) => {
+				e.stopPropagation();
+				toggleWordSelection(word);
+			});
+			
+			wordsList.appendChild(wordCard);
+		});
+	}
+
+	function toggleWordSelection(word) {
+		const isSelected = selectedWords.some(selected => selected.id === word.id);
+		
+		if (isSelected) {
+			// Remove from selection
+			selectedWords = selectedWords.filter(selected => selected.id !== word.id);
+		} else {
+			// Add to selection
+			selectedWords.push(word);
+		}
+		
+		// Update UI
+		updateSelectionUI();
+		displayWords(); // Re-render to update button states
+	}
+
+	function updateSelectionUI() {
+		const count = selectedWords.length;
+		selectedCount.textContent = count;
+		
+		if (count > 0) {
+			selectedWordsCounter.classList.remove('hidden');
+			startWithSelectedWordsBtn.disabled = false;
+		} else {
+			selectedWordsCounter.classList.add('hidden');
+			startWithSelectedWordsBtn.disabled = true;
+		}
+	}
+
+	function searchWords() {
+		const searchTerm = wordSearchInput.value.toLowerCase().trim();
+		
+		if (searchTerm === '') {
+			filteredWords = [...allWords];
+		} else {
+			filteredWords = allWords.filter(word => 
+				word.word.toLowerCase().includes(searchTerm) || 
+				word.meaning.toLowerCase().includes(searchTerm) ||
+				(word.meaning_geo && word.meaning_geo.toLowerCase().includes(searchTerm))
+			);
+		}
+		
+		displayWords();
+	}
+
+	async function startFlashcardsWithSelectedWords() {
+		if (selectedWords.length === 0) return;
+		
 		closeFlashcardsLandingModal();
-		// TODO: Implement word selection functionality
-		showNotification('Build Your Own feature coming soon!', 'warning');
+		
+		// Convert selected words to flashcard format
+		flashcards = selectedWords.map(word => ({
+			word: word.word,
+			meaning: word.meaning,
+			meaning_geo: word.meaning_geo
+		}));
+		
+		showFlashcardsSection();
+		startFlashcardSession();
 	}
 
 	// Event listeners
@@ -687,6 +1077,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	if (buildYourOwnOption) {
 		buildYourOwnOption.addEventListener('click', handleBuildYourOwn);
+	}
+
+	// Date picker event listeners
+	if (prevMonthBtn) {
+		prevMonthBtn.addEventListener('click', () => changeMonth('prev'));
+	}
+
+	if (nextMonthBtn) {
+		nextMonthBtn.addEventListener('click', () => changeMonth('next'));
+	}
+
+	if (backToOptionsBtn) {
+		backToOptionsBtn.addEventListener('click', hideDatePicker);
+	}
+
+	if (startWithDateBtn) {
+		startWithDateBtn.addEventListener('click', startFlashcardsWithDate);
+	}
+
+	// Word selection event listeners
+	if (backToOptionsFromWordsBtn) {
+		backToOptionsFromWordsBtn.addEventListener('click', hideWordSelection);
+	}
+
+	if (startWithSelectedWordsBtn) {
+		startWithSelectedWordsBtn.addEventListener('click', startFlashcardsWithSelectedWords);
+	}
+
+	if (wordSearchInput) {
+		wordSearchInput.addEventListener('input', searchWords);
 	}
 
 	// Close modal on backdrop click
