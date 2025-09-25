@@ -341,6 +341,65 @@
 		</div>
 	</div>
 
+	<!-- Flashcards Landing Modal -->
+	<div id="flashcardsLandingModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden backdrop-blur-sm">
+		<div class="bg-white rounded-2xl w-full max-w-lg mx-4 p-6 sm:p-8 overflow-hidden flex flex-col">
+			<div class="flex items-center justify-between mb-4">
+				<div class="flex items-center space-x-3">
+					<div class="w-10 h-10 flex items-center justify-center rounded-xl bg-primary/10 text-primary">
+						<i class="ri-flashlight-line ri-lg"></i>
+					</div>
+					<div>
+						<h2 class="text-xl font-bold text-dark">Start Flashcards</h2>
+						<p class="text-sm text-warm">Choose how you want to practice</p>
+					</div>
+				</div>
+				<button id="flashcardsLandingClose" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors">
+					<i class="ri-close-line text-gray-500"></i>
+				</button>
+			</div>
+			
+			<div class="mt-2 text-sm text-warm mb-6">
+				<p>Practice your vocabulary with flashcards. Choose from today's words or build your own set.</p>
+			</div>
+			
+			<!-- Flashcard Options -->
+			<div class="space-y-4">
+				<!-- Choose Date Option -->
+				<button id="chooseDateOption" class="w-full p-4 rounded-xl border-2 border-gray-200 hover:border-primary/50 transition-all duration-200 text-left group">
+					<div class="flex items-center space-x-4">
+						<div class="w-12 h-12 flex items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+							<i class="ri-calendar-line ri-xl"></i>
+						</div>
+						<div class="flex-1">
+							<h3 class="font-semibold text-dark text-base">Choose Date</h3>
+							<p class="text-sm text-warm mt-1">Practice words from a specific date</p>
+						</div>
+						<i class="ri-arrow-right-line text-gray-400 group-hover:text-primary transition-colors"></i>
+					</div>
+				</button>
+				
+				<!-- Build Your Own Option -->
+				<button id="buildYourOwnOption" class="w-full p-4 rounded-xl border-2 border-gray-200 hover:border-primary/50 transition-all duration-200 text-left group">
+					<div class="flex items-center space-x-4">
+						<div class="w-12 h-12 flex items-center justify-center rounded-xl bg-secondary/10 text-secondary group-hover:bg-secondary/20 transition-colors">
+							<i class="ri-settings-3-line ri-xl"></i>
+						</div>
+						<div class="flex-1">
+							<h3 class="font-semibold text-dark text-base">Build Your Own</h3>
+							<p class="text-sm text-warm mt-1">Select specific words from your dictionary</p>
+						</div>
+						<i class="ri-arrow-right-line text-gray-400 group-hover:text-primary transition-colors"></i>
+					</div>
+				</button>
+			</div>
+			
+			<div class="mt-6 flex items-center justify-end space-x-3">
+				<button id="flashcardsLandingCancel" class="px-4 py-2 rounded-button text-sm text-dark hover:bg-gray-100 transition-colors">Cancel</button>
+			</div>
+		</div>
+	</div>
+
 	<!-- Scripts -->
 	<!-- Loader SVG filter definition for CSS-based mirage loader -->
 	<svg width="0" height="0" class="svg" style="position:absolute">

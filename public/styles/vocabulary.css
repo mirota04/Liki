@@ -366,3 +366,178 @@
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+/* Flashcards Landing Modal Styles */
+.flashcards-landing-modal {
+	background: rgba(0, 0, 0, 0.5);
+	backdrop-filter: blur(8px);
+}
+
+.flashcards-landing-content {
+	background: white;
+	border-radius: 16px;
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+	animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+	from {
+		opacity: 0;
+		transform: scale(0.95) translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
+}
+
+.flashcard-option {
+	transition: all 0.2s ease;
+	border: 2px solid #e5e7eb;
+}
+
+.flashcard-option:hover {
+	border-color: rgba(95, 131, 150, 0.5);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.flashcard-option:active {
+	transform: translateY(0);
+}
+
+.option-icon {
+	transition: all 0.2s ease;
+}
+
+.flashcard-option:hover .option-icon {
+	transform: scale(1.05);
+}
+
+.option-arrow {
+	transition: all 0.2s ease;
+}
+
+.flashcard-option:hover .option-arrow {
+	color: #5F8396;
+	transform: translateX(2px);
+}
+
+/* Responsive Design for Flashcards Landing Modal */
+@media (max-width: 640px) {
+	.flashcards-landing-content {
+		margin: 1rem;
+		padding: 1.5rem;
+		max-height: 90vh;
+		overflow-y: auto;
+	}
+	
+	.flashcard-option {
+		padding: 1rem;
+	}
+	
+	.flashcard-option .flex {
+		flex-direction: column;
+		text-align: center;
+		space-x: 0;
+		space-y: 3;
+	}
+	
+	.flashcard-option .option-icon {
+		width: 3rem;
+		height: 3rem;
+		margin: 0 auto;
+	}
+	
+	.flashcard-option h3 {
+		font-size: 1rem;
+		margin-top: 0.5rem;
+	}
+	
+	.flashcard-option p {
+		font-size: 0.875rem;
+		margin-top: 0.25rem;
+	}
+	
+	.option-arrow {
+		display: none;
+	}
+	
+	/* Modal header adjustments for mobile */
+	.flashcards-landing-content .flex.items-center.space-x-3 {
+		flex-direction: column;
+		text-align: center;
+		space-x: 0;
+		space-y: 2;
+	}
+	
+	.flashcards-landing-content .w-10.h-10 {
+		width: 3rem;
+		height: 3rem;
+		margin: 0 auto;
+	}
+	
+	.flashcards-landing-content h2 {
+		font-size: 1.25rem;
+	}
+	
+	.flashcards-landing-content p {
+		font-size: 0.875rem;
+	}
+}
+
+@media (max-width: 480px) {
+	.flashcards-landing-content {
+		margin: 0.5rem;
+		padding: 1rem;
+	}
+	
+	.flashcard-option {
+		padding: 0.75rem;
+	}
+	
+	.flashcard-option .option-icon {
+		width: 2.5rem;
+		height: 2.5rem;
+	}
+	
+	.flashcard-option h3 {
+		font-size: 0.875rem;
+	}
+	
+	.flashcard-option p {
+		font-size: 0.75rem;
+	}
+}
+
+/* Dark mode styles for flashcards landing modal */
+[data-theme="dark"] .flashcards-landing-content {
+	background-color: var(--card-bg);
+	border-color: var(--border-color);
+}
+
+[data-theme="dark"] .flashcard-option {
+	border-color: var(--border-color);
+	background-color: var(--bg-secondary);
+}
+
+[data-theme="dark"] .flashcard-option:hover {
+	border-color: var(--primary-bg);
+	background-color: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .flashcard-option h3 {
+	color: var(--primary-text);
+}
+
+[data-theme="dark"] .flashcard-option p {
+	color: var(--text-secondary);
+}
+
+[data-theme="dark"] .option-arrow {
+	color: var(--text-secondary);
+}
+
+[data-theme="dark"] .flashcard-option:hover .option-arrow {
+	color: var(--primary-bg);
+}
+

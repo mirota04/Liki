@@ -455,6 +455,13 @@ document.addEventListener('DOMContentLoaded', function() {
 	const btnCorrect = document.getElementById('btn-correct');
 	const restartFlashcardsBtn = document.getElementById('restart-flashcards');
 
+	// Flashcards Landing Modal elements
+	const flashcardsLandingModal = document.getElementById('flashcardsLandingModal');
+	const flashcardsLandingClose = document.getElementById('flashcardsLandingClose');
+	const flashcardsLandingCancel = document.getElementById('flashcardsLandingCancel');
+	const chooseDateOption = document.getElementById('chooseDateOption');
+	const buildYourOwnOption = document.getElementById('buildYourOwnOption');
+
 	let flashcards = [];
 	let currentCardIndex = 0;
 	let currentDirection = 'en-ko'; // 'en-ko' or 'ko-en'
@@ -636,9 +643,59 @@ document.addEventListener('DOMContentLoaded', function() {
 		}
 	}
 
+	// Flashcards Landing Modal functions
+	function openFlashcardsLandingModal() {
+		if (!flashcardsLandingModal) return;
+		flashcardsLandingModal.classList.remove('hidden');
+	}
+
+	function closeFlashcardsLandingModal() {
+		if (!flashcardsLandingModal) return;
+		flashcardsLandingModal.classList.add('hidden');
+	}
+
+	function handleChooseDate() {
+		closeFlashcardsLandingModal();
+		// For now, start with today's words (same as before)
+		// TODO: Implement date picker functionality
+		startFlashcardSession();
+	}
+
+	function handleBuildYourOwn() {
+		closeFlashcardsLandingModal();
+		// TODO: Implement word selection functionality
+		showNotification('Build Your Own feature coming soon!', 'warning');
+	}
+
 	// Event listeners
 	if (startFlashcardsBtn) {
-		startFlashcardsBtn.addEventListener('click', startFlashcardSession);
+		startFlashcardsBtn.addEventListener('click', openFlashcardsLandingModal);
+	}
+
+	// Flashcards Landing Modal event listeners
+	if (flashcardsLandingClose) {
+		flashcardsLandingClose.addEventListener('click', closeFlashcardsLandingModal);
+	}
+
+	if (flashcardsLandingCancel) {
+		flashcardsLandingCancel.addEventListener('click', closeFlashcardsLandingModal);
+	}
+
+	if (chooseDateOption) {
+		chooseDateOption.addEventListener('click', handleChooseDate);
+	}
+
+	if (buildYourOwnOption) {
+		buildYourOwnOption.addEventListener('click', handleBuildYourOwn);
+	}
+
+	// Close modal on backdrop click
+	if (flashcardsLandingModal) {
+		flashcardsLandingModal.addEventListener('click', function(e) {
+			if (e.target === flashcardsLandingModal) {
+				closeFlashcardsLandingModal();
+			}
+		});
 	}
 
 	if (directionEnKo) {
