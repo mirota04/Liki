@@ -234,7 +234,8 @@
 
 				<!-- Card -->
 				<div class="flashcard-wrapper flex justify-center mb-8">
-					<div id="flashcard" class="flashcard">
+					<div class="relative inline-block">
+						<div id="flashcard" class="flashcard">
 						<div class="flashcard-inner">
 							<div class="flashcard-front">
 								<div id="card-front-text" class="card-text"></div>
@@ -244,11 +245,21 @@
 								<div id="card-back-text" class="card-text"></div>
 							</div>
 						</div>
+						</div>
+
+						<!-- Undo button: below on mobile, left of card on desktop without affecting centering -->
+						<button id="btn-undo" data-undo title="Undo last" class="hidden sm:inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-dark hover:bg-gray-200 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed sm:mt-0 sm:absolute sm:left-0 sm:top-1/2 sm:-translate-y-1/2 sm:-translate-x-full sm:-ml-2.5">
+							<i class="ri-arrow-go-back-line"></i>
+						</button>
 					</div>
 				</div>
 
 				<!-- Action Buttons -->
-				<div class="flex justify-center gap-4">
+				<div class="flex justify-center gap-4 relative">
+					<!-- Mobile undo button: placed to the left of Wrong button -->
+					<button data-undo title="Undo last" class="inline-flex sm:hidden absolute left-0 -translate-x-1/2 -top-12 items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-dark hover:bg-gray-200 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+						<i class="ri-arrow-go-back-line"></i>
+					</button>
 					<button id="btn-wrong" class="action-btn wrong-btn">
 						<i class="ri-close-line mr-2"></i>
 						Wrong

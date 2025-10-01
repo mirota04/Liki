@@ -456,8 +456,9 @@ document.addEventListener('DOMContentLoaded', function() {
 	const currentCardSpan = document.getElementById('current-card');
 	const totalCardsSpan = document.getElementById('total-cards');
 	const progressBar = document.getElementById('progress-bar');
-	const btnWrong = document.getElementById('btn-wrong');
-	const btnCorrect = document.getElementById('btn-correct');
+    const btnWrong = document.getElementById('btn-wrong');
+    const btnCorrect = document.getElementById('btn-correct');
+    const undoButtons = document.querySelectorAll('[data-undo]');
 	const restartFlashcardsBtn = document.getElementById('restart-flashcards');
 
 	// Flashcards Landing Modal elements
@@ -497,6 +498,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	let currentDirection = 'en-ko'; // 'en-ko' or 'ko-en'
 	let remainingCards = [];
 	let isFlipped = false;
+	let historyStack = [];
 
 	// Date picker state
 	let currentDate = new Date();
@@ -585,6 +587,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		remainingCards = [...flashcards].sort(() => Math.random() - 0.5);
 		currentCardIndex = 0;
 		isFlipped = false;
+		historyStack = [];
 		
 		flashcardContainer.classList.remove('hidden');
 		flashcardsEmpty.classList.add('hidden');
@@ -636,6 +639,13 @@ document.addEventListener('DOMContentLoaded', function() {
 		if (remainingCards.length === 0) return;
 
 		const card = remainingCards[currentCardIndex];
+		// Save snapshot for undo
+		historyStack.push({
+			card: { ...card },
+			isCorrect,
+			remainingSnapshot: [...remainingCards],
+			currentDirection
+		});
 
 		// Remove card from remaining cards if correct
 		if (isCorrect) {
@@ -685,6 +695,30 @@ document.addEventListener('DOMContentLoaded', function() {
 		currentCardIndex = 0;
 	}
 
+	function canUndo() {
+		return historyStack.length > 0;
+	}
+
+    function updateUndoState() {
+        if (!undoButtons || undoButtons.length === 0) return;
+        const disabled = !canUndo();
+        undoButtons.forEach(btn => { btn.disabled = disabled; });
+    }
+
+	function undoLast() {
+		if (!canUndo()) return;
+		const last = historyStack.pop();
+		remainingCards = [...last.remainingSnapshot];
+		currentDirection = last.currentDirection;
+		applyDirectionButtonStyles();
+		currentCardIndex = 0;
+		isFlipped = false;
+		flashcard.classList.remove('flipped', 'entering');
+		updateProgress();
+		loadCurrentCard();
+		updateUndoState();
+	}
+
 	function updateProgress() {
 		const total = flashcards.length;
 		const completed = total - remainingCards.length;
@@ -695,6 +729,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		
 		const progress = (completed / total) * 100;
 		progressBar.style.width = `${progress}%`;
+		updateUndoState();
 	}
 
 	function setDirection(direction) {
@@ -1171,6 +1206,10 @@ document.addEventListener('DOMContentLoaded', function() {
 	if (btnCorrect) {
 		btnCorrect.addEventListener('click', () => nextCard(true));
 	}
+
+    if (undoButtons && undoButtons.length > 0) {
+        undoButtons.forEach(btn => btn.addEventListener('click', undoLast));
+    }
 
 	if (restartFlashcardsBtn) {
 		restartFlashcardsBtn.addEventListener('click', startFlashcardSession);
