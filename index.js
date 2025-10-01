@@ -732,39 +732,80 @@ const db = new pg.Pool({
   ...dbConfig,
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
+  connectionTimeoutMillis: 10000, // Return an error after 10 seconds if connection could not be established
+  acquireTimeoutMillis: 10000, // Return an error after 10 seconds if a client could not be acquired
+  statement_timeout: 30000, // Cancel queries after 30 seconds
+  query_timeout: 30000, // Cancel queries after 30 seconds
+  keepAlive: true, // Enable TCP keep-alive
+  keepAliveInitialDelayMillis: 10000, // Start keep-alive after 10 seconds
 });
 
-// Test the connection pool
-db.query('SELECT NOW()')
-  .then(() => {
-    console.log(' Database pool connected successfully!');
-    if (process.env.DATABASE_URL) {
-      console.log(' Using production database (Neon/Heroku)');
-    } else {
-      console.log(' Using local database');
+// Test the connection pool with retry logic
+async function testDatabaseConnection(retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`Database connection attempt ${attempt}/${retries}...`);
+      await db.query('SELECT NOW()');
+      console.log('✅ Database pool connected successfully!');
+      if (process.env.DATABASE_URL) {
+        console.log(' Using production database (Neon/Heroku)');
+      } else {
+        console.log(' Using local database');
+      }
+      return true;
+    } catch (err) {
+      console.error(`❌ Database connection attempt ${attempt} failed:`, err.message);
+      
+      if (err.code === 'ECONNREFUSED') {
+        console.error('=== CONNECTION REFUSED ANALYSIS ===');
+        console.error('This error suggests the app is trying to connect to localhost instead of Neon.');
+        console.error('Check if DATABASE_URL is properly set in Heroku config vars.');
+        console.error('Current DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
+        console.error('=====================================');
+      } else if (err.message.includes('terminated') || err.message.includes('timeout')) {
+        console.error('=== CONNECTION TIMEOUT/TERMINATED ANALYSIS ===');
+        console.error('Connection was established but terminated unexpectedly.');
+        console.error('This might be due to SSL issues, network problems, or database server issues.');
+        console.error('Trying with increased timeout settings...');
+        console.error('=====================================');
+      }
+      
+      if (attempt === retries) {
+        console.error('=== FINAL CONNECTION FAILURE ===');
+        console.error('Error code:', err.code);
+        console.error('Error message:', err.message);
+        console.log('Troubleshooting steps:');
+        console.log('1. Check if DATABASE_URL is correct');
+        console.log('2. Verify Neon database is active and accessible');
+        console.log('3. Check network connectivity');
+        console.log('4. Try restarting the application');
+        console.log('5. Check Neon dashboard for any service issues');
+        process.exit(1);
+      }
+      
+      // Wait before retry (exponential backoff)
+      const waitTime = Math.pow(2, attempt) * 1000;
+      console.log(`Waiting ${waitTime}ms before retry...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
     }
-  })
-  .catch(err => {
-    console.error(' Database pool connection failed:', err);
-    console.error(' Error code:', err.code);
-    console.error(' Error message:', err.message);
-    
-    if (err.code === 'ECONNREFUSED') {
-      console.error('=== CONNECTION REFUSED ANALYSIS ===');
-      console.error('This error suggests the app is trying to connect to localhost instead of Neon.');
-      console.error('Check if DATABASE_URL is properly set in Heroku config vars.');
-      console.error('Current DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
-      console.error('=====================================');
-    } else if (err.message.includes('terminated')) {
-      console.error('=== CONNECTION TERMINATED ANALYSIS ===');
-      console.error('Connection was established but terminated unexpectedly.');
-      console.error('This might be due to SSL issues or database server problems.');
-      console.error('=====================================');
-    }
-    
-    process.exit(1);
-  });
+  }
+}
+
+// Add connection pool event handlers
+db.on('connect', (client) => {
+  console.log('🔗 New client connected to database pool');
+});
+
+db.on('error', (err, client) => {
+  console.error('❌ Database pool error:', err);
+});
+
+db.on('remove', (client) => {
+  console.log('🔌 Client removed from database pool');
+});
+
+// Start connection test
+testDatabaseConnection();
 
 app.get("/", (req, res) => {
   res.render("login.ejs");

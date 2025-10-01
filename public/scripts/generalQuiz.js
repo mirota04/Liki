@@ -306,9 +306,11 @@
           answerInput.className = 'w-full border-2 border-red-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-300 transition-colors';
         }
 
-        // Re-enable input and button
+        // Re-enable input and button and restore focus so Enter can advance
         answerInput.disabled = false;
         btnSubmit.disabled = false;
+        answerInput.focus();
+        try { answerInput.select(); } catch (e) {}
 
         renderDots();
         renderProgress();
@@ -321,6 +323,7 @@
         // Re-enable input and button
         answerInput.disabled = false;
         btnSubmit.disabled = false;
+        answerInput.focus();
       }
     });
 
