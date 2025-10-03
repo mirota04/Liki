@@ -118,12 +118,36 @@ document.addEventListener('DOMContentLoaded', function() {
 	// Display GPT response
 	function displayGPTResponse(feedback) {
 		if (gptResponseContent) {
+			// Process the feedback to add user input for each grammar rule
+			let processedFeedback = feedback;
+			
+			// For each question, find the corresponding grammar rule in the feedback and add user input
+			if (quizData && quizData.length > 0) {
+				quizData.forEach((question, index) => {
+					// Look for the grammar rule pattern in the feedback (e.g., "**아/어 보이다**:")
+					const grammarPattern = `**${question.title}**:`;
+					const userInput = question.koreanAnswer || 'No answer provided';
+					
+					// Find the pattern and add user input after it
+					const patternRegex = new RegExp(`(\\*\\*${question.title}\\*\\*:)`, 'g');
+					processedFeedback = processedFeedback.replace(patternRegex, `$1\n\nYour response: ${userInput}`);
+				});
+			}
+			
 			gptResponseContent.innerHTML = `
 				<div class="space-y-4">
-					<div class="text-gray-700 leading-relaxed">
-						${feedback.split('\n').map(line => 
-							line.trim() ? `<p class="mb-2">${line}</p>` : ''
-						).join('')}
+					<div class="bg-green-50 border border-green-200 rounded-lg p-4">
+						<div class="flex items-center space-x-2 mb-3">
+							<div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+								<i class="ri-robot-line text-green-600"></i>
+							</div>
+							<h3 class="text-lg font-semibold text-green-800">AI Evaluation</h3>
+						</div>
+						<div class="text-green-700 leading-relaxed">
+							${processedFeedback.split('\n').map(line => 
+								line.trim() ? `<p class="mb-2">${line}</p>` : ''
+							).join('')}
+						</div>
 					</div>
 				</div>
 			`;

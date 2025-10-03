@@ -151,7 +151,7 @@
                             <% (grammars || []).forEach(function(g){ %>
                             <tr class="grammar-row cursor-pointer hover:bg-gray-50" data-id="<%= g.id %>" data-title="<%- g.title %>" data-explanation="<%- g.explanation %>" data-kexample="<%- g.kexample %>" data-eexample="<%- g.eexample %>">
                                 <td class="px-6 py-6">
-                                    <div class="w-8 h-8 flex items-center justify-center grammar-number rounded-full text-sm"><%= g.id %></div>
+                                    <div class="w-8 h-8 flex items-center justify-center grammar-number rounded-full text-sm"><%= g.user_sequence %></div>
                                 </td>
                                 <td class="px-6 py-6">
                                     <div class="korean-text"><%= g.title %></div>
@@ -177,7 +177,7 @@
                 <% (grammars || []).forEach(function(g){ %>
                 <div class="grammar-card bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100" data-id="<%= g.id %>" data-title="<%- g.title %>" data-explanation="<%- g.explanation %>" data-kexample="<%- g.kexample %>" data-eexample="<%- g.eexample %>">
                     <div class="flex items-start justify-between mb-3">
-                        <div class="w-8 h-8 flex items-center justify-center grammar-number rounded-full text-sm"><%= g.id %></div>
+                        <div class="w-8 h-8 flex items-center justify-center grammar-number rounded-full text-sm"><%= g.user_sequence %></div>
                     </div>
                     <div class="space-y-2 sm:space-y-3">
                         <div>

@@ -29,7 +29,7 @@ async function generateEnglishExamplesWithGPT(title, englishExample) {
     const resp = await axios.post(
       'https://api.openai.com/v1/responses',
       {
-        model: 'gpt-5-nano',
+        model: 'gpt-5-mini',
         input: prompt,
         max_output_tokens: 4000,
         reasoning: { effort: 'low' },
@@ -86,7 +86,7 @@ async function generateGrammarFeedbackWithGPT(prompt, maxTokens = 30000) {
     const resp = await axios.post(
       'https://api.openai.com/v1/responses',
       {
-        model: 'gpt-5-nano',
+        model: 'gpt-5-mini',
         input: prompt,
         max_output_tokens: maxTokens,
         reasoning: { effort: 'low' },
@@ -1020,7 +1020,21 @@ app.get("/grammar", async (req, res) => {
       "SELECT id, title, explanation, Kexample, Eexample FROM Grammar WHERE user_id = $1 ORDER BY id DESC",
       [req.session.user.id]
     );
-    res.render("grammar.ejs", { grammars: result.rows, total: result.rowCount });
+    
+    // Create a mapping of ID to sequence number for this user
+    const sortedIds = result.rows.map(g => g.id).sort((a, b) => a - b);
+    const idToSequence = {};
+    sortedIds.forEach((id, index) => {
+      idToSequence[id] = index + 1;
+    });
+    
+    // Add sequential numbering based on ID order (lowest ID = 1, highest ID = highest number)
+    const grammarsWithSequence = result.rows.map((grammar) => ({
+      ...grammar,
+      user_sequence: idToSequence[grammar.id]
+    }));
+    
+    res.render("grammar.ejs", { grammars: grammarsWithSequence, total: result.rowCount });
   } catch (err) {
     console.error("Error loading grammar:", err);
     res.render("grammar.ejs", { grammars: [], total: 0 });
